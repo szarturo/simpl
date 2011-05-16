@@ -6,9 +6,13 @@ CREATE OR REPLACE PACKAGE PKG_CREDITO AS
     cVerdadero                          CONSTANT VARCHAR2(1)                                     := 'V';
     cDivisaPeso                         CONSTANT PFIN_MOVIMIENTO.CVE_DIVISA%TYPE                 := 'MXP';
     cPagoPrestamo                       CONSTANT PFIN_MOVIMIENTO.CVE_OPERACION%TYPE              := 'CRPAGOPRES';
+    cAbonoAjuste                        CONSTANT PFIN_MOVIMIENTO.CVE_OPERACION%TYPE              := 'ABAJUS';
+    cPagoDefuncion                      CONSTANT PFIN_MOVIMIENTO.CVE_OPERACION%TYPE              := 'EXTDEF';
+    cImpBruto                           CONSTANT PFIN_MOVIMIENTO_DET.CVE_CONCEPTO%TYPE           := 'IMPBRU';
     cSitCancelada                       CONSTANT PFIN_MOVIMIENTO.SIT_MOVIMIENTO%TYPE             := 'CA';
     vgResultado                         NUMBER;
     cEtapaLiquidado                     CONSTANT SIM_CAT_ETAPA_PRESTAMO.ID_ETAPA_PRESTAMO%TYPE   := 8;
+    cEtapaLiqXDefuncion                 CONSTANT SIM_CAT_ETAPA_PRESTAMO.ID_ETAPA_PRESTAMO%TYPE   := 8;    
     
     -- Procedimiento que actuliza la informacion variable de los creditos, esto lo realiza para todas las amortizaciones
     -- pendientes de pago
@@ -36,6 +40,13 @@ CREATE OR REPLACE PACKAGE PKG_CREDITO AS
                                        pTxrespuesta     OUT VARCHAR2);
 
 
+    --********************************************************************************************************--
+    --*     pAplicaPagoCreditoPorAmort                                                                       *--
+    --*     Propósito:  Aplicar el pago de un préstamo y distribuirlo en los diferentes conceptos            *--
+    --*                 este pago puede ser por ajuste, defuncion o pago normal                              *--
+    --*                 Este metodo es el que inserta el pago para cada amortizacion ya que los pagos        *--
+    --*                 se realizan para cada una de las amortizaciones                                      *--
+    --********************************************************************************************************--    
     FUNCTION pAplicaPagoCreditoPorAmort(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
                                          pCveEmpresa      IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
                                          pIdPrestamo      IN PFIN_PRE_MOVIMIENTO.ID_PRESTAMO%TYPE,
@@ -44,23 +55,34 @@ CREATE OR REPLACE PACKAGE PKG_CREDITO AS
                                          pIdCuenta        IN PFIN_MOVIMIENTO.ID_CUENTA%TYPE,
                                          pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
                                          pFValor          IN PFIN_PRE_MOVIMIENTO.F_APLICACION%TYPE,
+                                         pCveOperacion    IN PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE,
                                          pTxrespuesta     OUT VARCHAR2)
     RETURN NUMBER;
 
     --********************************************************************************************************--
-    --*     pAplicaPagoCredito                                                                               *--
+    --*     pAplicaPagoCredito (Recargado para que no pida pCveOperacion)                                    *--
     --*     Propósito:  Aplicar el pago de un préstamo y distribuirlo en los diferentes conceptos            *--
-    --*     Parámetros:                                                                                      *--
-    --*         pCveGpoEmpresa:     Clave de Grupo de Empresa                                                *--
-    --*         pCveEmpresa:        Clave de Empresa                                                         *--
-    --*         pIdPrestamo         Identificador del préstamo                                               *--
-    --*         pTxRespuesta:       Parámetro de salida que indica el resultado de la operación              *--
+    --*                 este metodo envia siempre la pCveOperacion = cPagoPrestamo                           *--
+    --*                 Es utilizado para el llamado desde la pantalla de pago de prestamo                   *--
     --********************************************************************************************************--
     PROCEDURE pAplicaPagoCredito(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
                                  pCveEmpresa      IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
                                  pIdPrestamo      IN PFIN_PRE_MOVIMIENTO.ID_PRESTAMO%TYPE,
                                  pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
                                  pFValor          IN PFIN_PRE_MOVIMIENTO.F_APLICACION%TYPE,
+                                 pTxrespuesta     OUT VARCHAR2);
+
+    --********************************************************************************************************--
+    --*     pAplicaPagoCredito                                                                               *--
+    --*     Propósito:  Aplicar el pago de un préstamo y distribuirlo en los diferentes conceptos            *--
+    --*                 este pago puede ser por ajuste, defuncion o pago normal                              *--
+    --********************************************************************************************************--
+    PROCEDURE pAplicaPagoCredito(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
+                                 pCveEmpresa      IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
+                                 pIdPrestamo      IN PFIN_PRE_MOVIMIENTO.ID_PRESTAMO%TYPE,
+                                 pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
+                                 pFValor          IN PFIN_PRE_MOVIMIENTO.F_APLICACION%TYPE,
+                                 pCveOperacion    IN PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE,
                                  pTxrespuesta     OUT VARCHAR2);
 
     --********************************************************************************************************--
@@ -126,6 +148,8 @@ CREATE OR REPLACE PACKAGE PKG_CREDITO AS
     FUNCTION fRegistraMovtoDefuncion(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
                                      pCveEmpresa      IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
                                      pIdPrestamo      IN PFIN_PRE_MOVIMIENTO.ID_PRESTAMO%TYPE,
+                                     pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
+                                     pFValor          IN PFIN_PRE_MOVIMIENTO.F_OPERACION%TYPE,
                                      pTxRespuesta     OUT VARCHAR2)
     RETURN NUMBER;
     
@@ -140,15 +164,89 @@ CREATE OR REPLACE PACKAGE PKG_CREDITO AS
     FUNCTION fRegistraMovtoExtraordinario(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
                                           pCveEmpresa      IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
                                           pCveOperacion    IN PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE,
+                                          pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
                                           pArrayConceptos  IN TT_MOVTO_AJUSTE,
                                           pTxRespuesta     OUT VARCHAR2)
     RETURN NUMBER;
-
+    
 End Pkg_Credito;
 /
 
 
 CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
+    FUNCTION fObtieneCuenta(pCveGpoEmpresa   IN PFIN_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
+                            pCveEmpresa      IN PFIN_MOVIMIENTO.CVE_EMPRESA%TYPE,
+                            pIdPrestamo      IN PFIN_MOVIMIENTO.ID_PRESTAMO%TYPE,
+                            pTxrespuesta    OUT VARCHAR2)
+    RETURN SIM_PRESTAMO.ID_CUENTA_REFERENCIA%TYPE
+    IS
+       vlIdCuenta  SIM_PRESTAMO.ID_CUENTA_REFERENCIA%TYPE;    
+    BEGIN
+       SELECT NVL(ID_CUENTA_REFERENCIA,0), 
+              CASE WHEN NVL(ID_CUENTA_REFERENCIA,0) = 0 THEN 'No existe cuenta asociada al credito'
+                   ELSE ''
+              END
+         INTO vlIdCuenta, pTxrespuesta
+         FROM SIM_PRESTAMO
+        WHERE CVE_GPO_EMPRESA = pCveGpoEmpresa
+          AND CVE_EMPRESA     = pCveEmpresa
+          AND ID_PRESTAMO     = pIdPrestamo;
+        
+       RETURN vlIdCuenta;
+       
+       EXCEPTION   
+          WHEN NO_DATA_FOUND THEN
+               pTxrespuesta := 'No existe el prestamo';
+               RETURN -1;
+    END fObtieneCuenta;
+
+    FUNCTION fEsPrestamoGrupal(pCveGpoEmpresa   IN PFIN_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
+                                pCveEmpresa      IN PFIN_MOVIMIENTO.CVE_EMPRESA%TYPE,
+                                pIdPrestamo      IN PFIN_MOVIMIENTO.ID_PRESTAMO%TYPE)
+    RETURN SIM_PRESTAMO.B_ENTREGADO%TYPE
+    IS
+       vlBEsGrupo SIM_PRESTAMO.B_ENTREGADO%TYPE;
+    BEGIN
+       -- Valida que el prestamo exsita en la tabla grupal
+       BEGIN
+          SELECT cVerdadero
+            INTO vlBEsGrupo
+            FROM SIM_PRESTAMO_GRUPO
+           WHERE CVE_GPO_EMPRESA   = pCveGpoEmpresa
+             AND CVE_EMPRESA       = pCveEmpresa
+             AND ID_PRESTAMO_GRUPO = pIdPrestamo;
+             
+          EXCEPTION WHEN NO_DATA_FOUND THEN vlBEsGrupo := cFalso;
+             
+       END;      
+       
+       RETURN vlBEsGrupo;
+       
+    END fEsPrestamoGrupal;
+
+    FUNCTION fExistePresamoIndividual(pCveGpoEmpresa   IN PFIN_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
+                                       pCveEmpresa      IN PFIN_MOVIMIENTO.CVE_EMPRESA%TYPE,
+                                       pIdPrestamo      IN PFIN_MOVIMIENTO.ID_PRESTAMO%TYPE)
+    RETURN SIM_PRESTAMO.B_ENTREGADO%TYPE
+    IS
+       vlBExistePresIndiv SIM_PRESTAMO.B_ENTREGADO%TYPE;
+    BEGIN
+       -- Valida que el prestamo exsita en la tabla grupal
+       BEGIN
+          SELECT cVerdadero
+            INTO vlBExistePresIndiv
+            FROM SIM_PRESTAMO
+           WHERE CVE_GPO_EMPRESA = pCveGpoEmpresa
+             AND CVE_EMPRESA     = pCveEmpresa
+             AND ID_PRESTAMO     = pIdPrestamo;
+             
+          EXCEPTION WHEN NO_DATA_FOUND THEN vlBExistePresIndiv := cFalso;
+             
+       END;      
+       
+       RETURN vlBExistePresIndiv;
+       
+    END fExistePresamoIndividual;
 
     FUNCTION actualizaDiasAntiguedad (pCveGpoEmpresa   IN PFIN_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
                                       pCveEmpresa      IN PFIN_MOVIMIENTO.CVE_EMPRESA%TYPE,
@@ -1028,7 +1126,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
     vlNumPagos          NUMBER;
     i                   NUMBER(10):= 0;
     V                   SIM_TABLA_AMORTIZACION%ROWTYPE;
-    vlResultado         NUMBER;
+    vgResultado         NUMBER;
 
     CURSOR curAccesorios IS
    	
@@ -1328,7 +1426,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
         END LOOP;
         
         -- Actualiza la informacion del credito
-        vlResultado := fActualizaInformacionCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, vgFechaSistema, pTxRespuesta);
+        vgResultado := fActualizaInformacionCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, vgFechaSistema, pTxRespuesta);
 
         pTxrespuesta := 'La tabla de amortización del préstamo '||pIdPrestamo||' se generó correctamente.';
 
@@ -1439,7 +1537,8 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                 RETURN;
                 
     END pGeneraTablaAmortPrePago;
-
+    
+    -- Metodo Recargado utilizado por la pantalla de pago de prestamo
     PROCEDURE pAplicaPagoCredito(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
                                  pCveEmpresa      IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
                                  pIdPrestamo      IN PFIN_PRE_MOVIMIENTO.ID_PRESTAMO%TYPE,
@@ -1447,11 +1546,24 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                                  pFValor          IN PFIN_PRE_MOVIMIENTO.F_APLICACION%TYPE,
                                  pTxrespuesta     OUT VARCHAR2)
     IS
+       vlCveOperacion   PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE := cPagoPrestamo;
+    BEGIN
+       pAplicaPagoCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, pCveUsuario, pFValor, vlCveOperacion, pTxrespuesta);
+    END pAplicaPagoCredito;
+
+    PROCEDURE pAplicaPagoCredito(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
+                                 pCveEmpresa      IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
+                                 pIdPrestamo      IN PFIN_PRE_MOVIMIENTO.ID_PRESTAMO%TYPE,
+                                 pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
+                                 pFValor          IN PFIN_PRE_MOVIMIENTO.F_APLICACION%TYPE,
+                                 pCveOperacion    IN PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE,
+                                 pTxrespuesta     OUT VARCHAR2)
+    IS
         vlImpSaldo             PFIN_SALDO.SDO_EFECTIVO%TYPE;
         vlIdCuenta             SIM_PRESTAMO.ID_CUENTA%TYPE;
         vlImpNeto              PFIN_PRE_MOVIMIENTO.IMP_NETO%TYPE;
         vlMovtosPosteriores    NUMBER;
-        vlResultado            NUMBER;
+        vgResultado            NUMBER;
         
         CURSOR curAmortizacionesPendientes IS
           SELECT NUM_PAGO_AMORTIZACION, IMP_PAGO_TARDIO, IMP_INTERES_MORA, FECHA_AMORTIZACION
@@ -1475,22 +1587,10 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
         
        --DBMS_OUTPUT.PUT_LINE('Paso fecha = ' || vgFechaSistema);
         
-       BEGIN -- Se obtiene el id de la cuenta asociada al credito
-            SELECT ID_CUENTA_REFERENCIA
-              INTO vlIdCuenta
-              FROM SIM_PRESTAMO
-             WHERE CVE_GPO_EMPRESA = pCveGpoEmpresa
-               AND CVE_EMPRESA     = pCveEmpresa
-               AND ID_PRESTAMO     = pIdPrestamo;
-        
-            EXCEPTION   
-                WHEN NO_DATA_FOUND THEN
-                    pTxrespuesta := 'No existe el préstamo';
-                    RETURN;
-       END;
-        
-       IF vlIdCuenta IS NULL THEN
-          pTxrespuesta := 'El prestamo no tiene asociada la cuenta de referencia';
+       -- Se obtiene el id de la cuenta asociada al credito
+       vlIdCuenta := fObtieneCuenta(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, pTxrespuesta);
+
+       IF vlIdCuenta <= 0 THEN
           RETURN;
        END IF;
  
@@ -1525,9 +1625,9 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
        END IF;
         
        -- Actualiza la informacion del credito
-       vlResultado := fActualizaInformacionCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, pFValor, pTxRespuesta);
+       vgResultado := fActualizaInformacionCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, pFValor, pTxRespuesta);
 
-       IF vlResultado <> 0 THEN
+       IF vgResultado <> 0 THEN
           pTxrespuesta := 'Error al actualizar la informacion del credito a la fecha valor. ' || pTxrespuesta;
           RETURN;
        END IF;
@@ -1560,8 +1660,8 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
            --DBMS_OUTPUT.PUT_LINE('Recupero saldo: ' || vlImpSaldo);
            
            IF vlImpSaldo > 0 THEN
-             vlResultado := pAplicaPagoCreditoPorAmort(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, vlBufAmortizaciones.NUM_PAGO_AMORTIZACION, 
-                                                       vlImpSaldo, vlIdCuenta, pCveUsuario, pFValor, pTxrespuesta);
+             vgResultado := pAplicaPagoCreditoPorAmort(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, vlBufAmortizaciones.NUM_PAGO_AMORTIZACION, 
+                                                       vlImpSaldo, vlIdCuenta, pCveUsuario, pFValor, pCveOperacion, pTxrespuesta);
 
              --DBMS_OUTPUT.PUT_LINE('Aplico pago a la amortizacion: ' || vlBufAmortizaciones.NUM_PAGO_AMORTIZACION);             
            ELSE
@@ -1573,7 +1673,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
        --DBMS_OUTPUT.PUT_LINE('Fin pAplicaPagoCredito');             
 
     END pAplicaPagoCredito;
-    
+
     -- Funcion que actuliza la informacion variable de los creditos, esto lo realiza para todas las amortizaciones
     -- pendientes de pago
     --      Por atraso: Pago tardio, interes moratorio e IVA de interes moratorio asi como la F_VALOR_CALCULO
@@ -1752,19 +1852,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
             
     BEGIN
        -- Determina si el prestamo es un prestamo grupal
-       IF pIdPrestamo <> 0 THEN
-       BEGIN
-          SELECT cVerdadero, ID_GRUPO
-            INTO vlBEsGrupo, vlIdGrupo
-            FROM SIM_PRESTAMO_GRUPO
-           WHERE CVE_GPO_EMPRESA   = pCveGpoEmpresa
-             AND CVE_EMPRESA       = pCveEmpresa
-             AND ID_PRESTAMO_GRUPO = pIdPrestamo;
-             
-          EXCEPTION WHEN NO_DATA_FOUND THEN vlBEsGrupo := cFalso;
-             
-       END;      
-       END IF;
+       vlBEsGrupo := fEsPrestamoGrupal(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo);
 
        -- Recupera el importe de la deuda minima
        SELECT IMP_DEUDA_MINIMA
@@ -2052,6 +2140,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                                         pIdCuenta        IN PFIN_MOVIMIENTO.ID_CUENTA%TYPE,
                                         pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
                                         pFValor          IN PFIN_PRE_MOVIMIENTO.F_APLICACION%TYPE,
+                                        pCveOperacion    IN PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE,
                                         pTxrespuesta     OUT VARCHAR2)
     RETURN NUMBER
     IS
@@ -2117,7 +2206,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
 
         -- Se genera el premovimiento
         PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, pIdCuenta, pIdPrestamo,
-                                     cDivisaPeso, cPagoPrestamo, vlImpNeto, 'PRESTAMO', 'PRESTAMO', 'Pago de prestamo',
+                                     cDivisaPeso, pCveOperacion, vlImpNeto, 'PRESTAMO', 'PRESTAMO', 'Pago de prestamo',
                                      NULL, pCveUsuario, pFValor, pNumAmortizacion, pTxrespuesta);            
 
         IF pTxrespuesta IS NOT NULL THEN 
@@ -2241,7 +2330,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
     RETURN SYS_REFCURSOR
     IS
        vlBEsGrupo                    SIM_TABLA_AMORTIZACION.B_PAGADO%TYPE;    
-       vlResultado                   NUMBER;
+       vgResultado                   NUMBER;
        vlSaldo                       PFIN_MOVIMIENTO.IMP_NETO%TYPE;
        vlSaldoProrrateo              PFIN_MOVIMIENTO.IMP_NETO%TYPE;
        vlImpAmortizacion             PFIN_MOVIMIENTO.IMP_NETO%TYPE;
@@ -2319,9 +2408,9 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
       END IF;
       
       -- Actualiza la informacion del credito a la fecha valor solicitada
-      vlResultado := fActualizaInformacionCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, pFValor, pTxRespuesta);
+      vgResultado := fActualizaInformacionCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, pFValor, pTxRespuesta);
 
-      IF vlResultado < 0 THEN
+      IF vgResultado < 0 THEN
          pTxRespuesta := 'El credito no se pudo actualizar';
          RETURN NULL;
       END IF;
@@ -2404,7 +2493,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                     AND A.CVE_EMPRESA       = B.CVE_EMPRESA
                     AND A.ID_PRESTAMO       = B.ID_PRESTAMO
                     AND B.NUM_PAGO_AMORTIZACION < vlNumAmortProrrateo
-                  GROUP BY A.CVE_GPO_EMPRESA, A.CVE_EMPRESA, B.ID_PRESTAMO
+                  group by A.CVE_GPO_EMPRESA, A.CVE_EMPRESA, B.ID_PRESTAMO
                   UNION ALL
                  SELECT A.CVE_GPO_EMPRESA, A.CVE_EMPRESA, B.ID_PRESTAMO, 
                         ROUND(SUM(IMP_NETO *-1) / vlImpAmortizacion * vlSaldoProrrateo,2) AS IMP_DEUDA
@@ -2432,14 +2521,81 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
     FUNCTION fRegistraMovtoDefuncion(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
                                      pCveEmpresa      IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
                                      pIdPrestamo      IN PFIN_PRE_MOVIMIENTO.ID_PRESTAMO%TYPE,
+                                     pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
+                                     pFValor          IN PFIN_PRE_MOVIMIENTO.F_OPERACION%TYPE,
                                      pTxRespuesta     OUT VARCHAR2)
     RETURN NUMBER
+       -- Cursor que devuelve los conceptos que deben liquidarse
     IS
+       vlCveOperacion   PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE := cPagoDefuncion;
+       vlImpDeuda       PFIN_PRE_MOVIMIENTO.IMP_NETO%TYPE;
+       vlIdCuenta       SIM_PRESTAMO.ID_CUENTA_REFERENCIA%TYPE;
+       vlIdPreMovto     PFIN_PRE_MOVIMIENTO.ID_PRE_MOVIMIENTO%TYPE;
+       vlIdMovimiento   PFIN_PRE_MOVIMIENTO.ID_MOVIMIENTO%TYPE;
     BEGIN
-       pTxRespuesta := 'Movimiento aplicado con exito';
+       -- Valida que sea un credito individual ya que solo puede morirse un individuo
+       IF fExistePresamoIndividual(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo) <> cVerdadero OR
+          fEsPrestamoGrupal(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo)        =  cVerdadero THEN
+          pTxRespuesta := 'El credito no existe o es un credito grupal';
+          RETURN -1;
+       END IF;
+       
+       -- Actualiza la informacion del credito
+        vgResultado := fActualizaInformacionCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, pFValor, pTxRespuesta);
+      
+       -- Recupera el saldo total del credito
+       SELECT SUM(IMP_NETO) * -1
+         INTO vlImpDeuda
+         FROM V_SIM_TABLA_AMORT_CONCEPTO 
+        WHERE CVE_GPO_EMPRESA       = pCveGpoEmpresa AND
+              CVE_EMPRESA           = pCveEmpresa    AND
+              ID_PRESTAMO           = pIdPrestamo;
+
+       IF vlImpDeuda <= 0 THEN
+          pTxRespuesta := 'El credito no tiene adeudos';
+          RETURN -1;
+       END IF;
+       
+       -- Recupera la cuenta asociada al credito
+       vlIdCuenta := fObtieneCuenta(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, pTxrespuesta);
+
+       DBMS_OUTPUT.PUT_LINE('CUENTA:' || vlIdCuenta);
+       
+       IF vlIdCuenta <= 0 THEN
+          RETURN -1;
+       END IF;
+
+        -- Se obtiene el id del premovimiento
+       SELECT  SQ01_PFIN_PRE_MOVIMIENTO.NEXTVAL INTO vlIdPreMovto FROM DUAL;
+
+       -- Se genera el premovimiento
+       PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, vlIdCuenta, pIdPrestamo,
+                                    cDivisaPeso, cAbonoAjuste, vlImpDeuda, 'AJUSTE', 'AJUSTE', 'Ajuste por defuncion',
+                                    0, pCveUsuario, pFValor, 0, pTxrespuesta);            
+
+       IF pTxrespuesta IS NOT NULL THEN 
+          RETURN 1; 
+       END IF;
+            
+       PKG_PROCESOS.pGeneraPreMovtoDet(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, cImpBruto, vlImpDeuda, 'Ajuste por defuncion', pTxrespuesta);
+
+       -- Se procesa el premovimiento
+       vlIdMovimiento := PKG_PROCESADOR_FINANCIERO.pprocesamovimiento(pcvegpoempresa, pcveempresa, vlIdPreMovto, 'PV', NULL, cFalso, ptxrespuesta);
+       
+       DBMS_OUTPUT.PUT_LINE('ACTUALIZO PREMOVTO:' || vlIdPreMovto);
+
+       -- Ejecuta el pago del credito utilizando la clave de operacion de defuncion
+       pAplicaPagoCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, pCveUsuario, pFValor, vlCveOperacion, pTxrespuesta);
+       
+       -- Actualiza la situacion del prestamo
+       UPDATE SIM_PRESTAMO
+          SET ID_ETAPA_PRESTAMO = cEtapaLiqXDefuncion
+        WHERE CVE_GPO_EMPRESA = pCveGpoEmpresa AND
+              CVE_EMPRESA     = pCveEmpresa    AND
+              ID_PRESTAMO     = pIdPrestamo;
+
        RETURN 0;
-    END;
-    
+    END fRegistraMovtoDefuncion;
     
     -- Funcion utilizada para cancelar el ultimo pago que se haya aplicado al credito
     FUNCTION fCancelaPago(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
@@ -2451,21 +2607,202 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
     BEGIN
        pTxRespuesta := 'Movimiento aplicado con exito';
        RETURN 0;
-    END;
+    END fCancelaPago;
     
-
     -- Funcion utilizada para registrar los diferentes tipos de pagos extraordinarios
     FUNCTION fRegistraMovtoExtraordinario(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
                                           pCveEmpresa      IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
                                           pCveOperacion    IN PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE,
+                                          pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
                                           pArrayConceptos  IN TT_MOVTO_AJUSTE,
                                           pTxRespuesta     OUT VARCHAR2)
     RETURN NUMBER
     IS
+       vlContador     NUMBER;
+       vlIdPrestamo   PFIN_PRE_MOVIMIENTO.ID_PRESTAMO%TYPE;
+       vlCveConcepto  PFIN_PRE_MOVIMIENTO_DET.CVE_CONCEPTO%TYPE;
+       vlImpConcepto  PFIN_PRE_MOVIMIENTO.IMP_NETO%TYPE;
+       vlImpPagoAmort PFIN_PRE_MOVIMIENTO.IMP_NETO%TYPE;
+       vlImpPago      PFIN_PRE_MOVIMIENTO.IMP_NETO%TYPE;
+       vlIdCuenta     SIM_PRESTAMO.ID_CUENTA_REFERENCIA%TYPE;
+       vlIdPreMovto   PFIN_PRE_MOVIMIENTO.ID_PRE_MOVIMIENTO%TYPE;
+       vlIdMovimiento PFIN_PRE_MOVIMIENTO.ID_MOVIMIENTO%TYPE;
+       vlFValor       PFIN_PRE_MOVIMIENTO.F_APLICACION%TYPE := vgFechaSistema;
+
+       CURSOR curConceptos IS
+          SELECT ID_PRESTAMO, CVE_CONCEPTO, IMP_CONCEPTO
+            FROM SIM_TEMP_CONCEPTO;
+            
+       CURSOR curConceptoXAmort (pIdPrestamo  IN PFIN_PRE_MOVIMIENTO.ID_PRESTAMO%TYPE,
+                                 pCveConcepto IN PFIN_PRE_MOVIMIENTO_DET.CVE_CONCEPTO%TYPE) IS
+          SELECT NUM_PAGO_AMORTIZACION, IMP_NETO * -1 AS IMP_DEBE
+            FROM V_SIM_TABLA_AMORT_CONCEPTO
+           WHERE CVE_GPO_EMPRESA = pCveGpoEmpresa AND
+                 CVE_EMPRESA     = pCveEmpresa    AND
+                 ID_PRESTAMO     = pIdPrestamo    AND
+                 CVE_CONCEPTO    = pCveConcepto   AND
+                 IMP_NETO        < 0
+           ORDER BY NUM_PAGO_AMORTIZACION;
+           
+       CURSOR curMovtoAjuste IS
+          SELECT ID_PRESTAMO, SUM(IMP_CONCEPTO) AS IMP_AJUSTE
+            FROM SIM_TEMP_AMORT_CONCEPTO
+           GROUP BY ID_PRESTAMO;
+           
+       CURSOR curAjusteXAmort (pIdPrestamo  IN PFIN_PRE_MOVIMIENTO.ID_PRESTAMO%TYPE) IS
+          SELECT ID_PRESTAMO, NUM_PAGO_AMORTIZACION, SUM(IMP_CONCEPTO) AS IMP_AJUSTE
+            FROM SIM_TEMP_AMORT_CONCEPTO
+           GROUP BY ID_PRESTAMO, NUM_PAGO_AMORTIZACION;           
+
+       CURSOR curAjusteXAmortConcepto (pIdPrestamo          IN PFIN_PRE_MOVIMIENTO.ID_PRESTAMO%TYPE,
+                                       pNumPagoAmortizacion IN PFIN_PRE_MOVIMIENTO.NUM_PAGO_AMORTIZACION%TYPE) IS
+          SELECT ID_PRESTAMO, NUM_PAGO_AMORTIZACION, CVE_CONCEPTO, SUM(IMP_CONCEPTO) AS IMP_AJUSTE
+            FROM SIM_TEMP_AMORT_CONCEPTO
+           GROUP BY ID_PRESTAMO, NUM_PAGO_AMORTIZACION, CVE_CONCEPTO;
+           
     BEGIN
+
+       -- Recupera el arreglo de prestamos, conceptos e importes y los inserta en una tabla temporal
+       FOR vlContador IN 1 .. pArrayConceptos.COUNT LOOP
+          -- Recupera el arreglo de datos
+          vlIdPrestamo  := pArrayConceptos(vlContador).ID_PRESTAMO;
+          vlCveConcepto := pArrayConceptos(vlContador).CVE_CONCEPTO;
+          vlImpConcepto := pArrayConceptos(vlContador).IMP_CONCEPTO;
+          
+          -- Carga los datos a una tabla temporal
+          IF vlImpConcepto > 0 THEN
+             INSERT INTO SIM_TEMP_CONCEPTO 
+                        (ID_PRESTAMO, CVE_CONCEPTO, IMP_CONCEPTO) 
+                 VALUES (vlIdPrestamo, vlCveConcepto, vlImpConcepto);
+          END IF;
+       END LOOP;
+       
+       -- Determinar en que amortizaciones debe aplicarse el concepto
+       FOR vlBufConcepto IN curConceptos LOOP
+           vlImpPago := vlBufConcepto.IMP_CONCEPTO;
+           
+           FOR vlBufConceptoXAmort IN curConceptoXAmort(vlBufConcepto.ID_PRESTAMO, vlBufConcepto.CVE_CONCEPTO) LOOP
+               IF vlImpPago = 0 THEN
+                  EXIT;
+               END IF;
+               
+               IF vlBufConceptoXAmort.IMP_DEBE < vlImpPago THEN
+                  vlImpPagoAmort := vlBufConceptoXAmort.IMP_DEBE;
+               ELSE 
+                  vlImpPagoAmort := vlImpPago;
+               END IF;
+               
+               -- Inserta el pago de la amortizacion
+               INSERT INTO SIM_TEMP_AMORT_CONCEPTO
+                           (ID_PRESTAMO, NUM_PAGO_AMORTIZACION, CVE_CONCEPTO, IMP_CONCEPTO) 
+                    VALUES (vlBufConcepto.ID_PRESTAMO, vlBufConceptoXAmort.NUM_PAGO_AMORTIZACION,
+                            vlBufConcepto.CVE_CONCEPTO, vlImpConcepto);
+
+               -- Resta el importe pagado
+               vlImpPago := vlImpPago - vlImpPagoAmort;
+           END LOOP;
+         
+       END LOOP;
+       
+       -- Inserta cada uno de los ajustes por cada prestamo
+       FOR vlBufMovtoAjuste IN curMovtoAjuste LOOP
+           -- Actualiza la informacion del credito
+           vgResultado := fActualizaInformacionCredito(pCveGpoEmpresa, pCveEmpresa, vlBufMovtoAjuste.ID_PRESTAMO, 
+                                                       vlFValor, pTxRespuesta);
+      
+           -- Recupera la cuenta asociada al credito
+           vlIdCuenta := fObtieneCuenta(pCveGpoEmpresa, pCveEmpresa, vlBufMovtoAjuste.ID_PRESTAMO, pTxrespuesta);
+
+           DBMS_OUTPUT.PUT_LINE('CUENTA:' || vlIdCuenta);
+       
+           IF vlIdCuenta <= 0 THEN
+              RETURN -1;
+           END IF;
+         
+           -- Se obtiene el id del premovimiento
+           SELECT  SQ01_PFIN_PRE_MOVIMIENTO.NEXTVAL INTO vlIdPreMovto FROM DUAL;
+
+           -- Se genera el premovimiento del ajuste
+           PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, vlIdCuenta, 
+                                        vlBufMovtoAjuste.ID_PRESTAMO, cDivisaPeso, cAbonoAjuste, 
+                                        vlBufMovtoAjuste.IMP_AJUSTE, 'AJUSTE', 'AJUSTE', 'Abono Ajuste Extraordinario',
+                                        0, pCveUsuario, vlFValor, 0, pTxrespuesta);            
+
+           IF pTxrespuesta IS NOT NULL THEN 
+              RETURN 1; 
+           END IF;
+            
+           PKG_PROCESOS.pGeneraPreMovtoDet(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, cImpBruto, vlBufMovtoAjuste.IMP_AJUSTE, 
+                                           'Abono Ajuste Extraordinario', pTxrespuesta);
+
+           -- Se procesa el premovimiento
+           vlIdMovimiento := PKG_PROCESADOR_FINANCIERO.pprocesamovimiento(pcvegpoempresa, pcveempresa, vlIdPreMovto, 'PV', NULL, cFalso, ptxrespuesta);
+       
+           DBMS_OUTPUT.PUT_LINE('ACTUALIZO PREMOVTO:' || vlIdPreMovto);
+           
+           -- ****************************************************************************************
+           -- Inserta un pago extraordinario por cada amortizacion
+           -- ****************************************************************************************
+           FOR vlBufAjusteXAmort IN curAjusteXAmort(vlBufMovtoAjuste.ID_PRESTAMO) LOOP
+               -- Se obtiene el id del premovimiento
+               SELECT  SQ01_PFIN_PRE_MOVIMIENTO.NEXTVAL INTO vlIdPreMovto FROM DUAL;
+
+               -- Se genera el premovimiento del ajuste
+               PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, vlIdCuenta, 
+                                            vlBufMovtoAjuste.ID_PRESTAMO, cDivisaPeso, pCveOperacion, 
+                                            vlBufAjusteXAmort.IMP_AJUSTE, 'AJUSTE', 'AJUSTE', 'Ajuste Extraordi nario',
+                                            vlBufAjusteXAmort.NUM_PAGO_AMORTIZACION, pCveUsuario, vlFValor, 0, pTxrespuesta);            
+
+              IF pTxrespuesta IS NOT NULL THEN 
+                 RETURN 1; 
+              END IF;
+            
+              -- Genera los detalles de los conceptos
+              FOR vlBufAjusteXAmortConcepto IN curAjusteXAmortConcepto(vlBufMovtoAjuste.ID_PRESTAMO,
+                                               vlBufAjusteXAmort.NUM_PAGO_AMORTIZACION)             LOOP
+                  PKG_PROCESOS.pGeneraPreMovtoDet(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vlBufAjusteXAmortConcepto.CVE_CONCEPTO,
+                                                  vlBufAjusteXAmortConcepto.IMP_AJUSTE, 'Ajuste Extraordinario', pTxrespuesta);
+              END LOOP;
+              
+              -- Se procesa el premovimiento
+              vlIdMovimiento := PKG_PROCESADOR_FINANCIERO.pprocesamovimiento(pcvegpoempresa, pcveempresa, vlIdPreMovto, 'PV', NULL, cFalso, ptxrespuesta);
+       
+              DBMS_OUTPUT.PUT_LINE('ACTUALIZO PREMOVTO:' || vlIdPreMovto);
+              
+              -- Actualiza la informacion de la tabla de amortizacion y de los accesorios con el movimiento generado
+              pActualizaTablaAmortizacion(pCveGpoEmpresa, pCveEmpresa, vlIdMovimiento, pTxRespuesta);
+           END LOOP;
+       END LOOP;
+
        pTxRespuesta := 'Movimiento aplicado con exito';
+
        RETURN 0;
-    END;
+    END fRegistraMovtoExtraordinario;
+/*    
+    -- Funcion utilizada para probar los movimientos extraordinarios
+    FUNCTION TestMovtoExtraordinario(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
+                                     pCveEmpresa      IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
+                                     pCveOperacion    IN PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE,
+                                     pTxRespuesta     OUT VARCHAR2)
+    RETURN NUMBER
+    IS
+       TYPE pArrayConceptos IS TABLE OF T_MOVTO_AJUSTE;
+       Conceptos pArrayConceptos;
+    BEGIN
     
+       -- Llena el arreglo
+       Conceptos(1).ID_PRESTAMO  := 1;
+       Conceptos(1).CVE_CONCEPTO := 'IMPBRU';       
+       Conceptos(1).IMP_CONCEPTO := 2000;
+       
+       vgResultado := fRegistraMovtoExtraordinario(pCveGpoEmpresa, pCveEmpresa, pCveOperacion, Conceptos, pTxRespuesta);      
+
+       RETURN 0;
+    END;    
+*/    
+BEGIN
+   -- Se asigna la fecha del sistema a la variable global
+   vgFechaSistema := PKG_PROCESOS.DameFechaSistema('SIM', 'CREDICONFIA');
+   
 END PKG_CREDITO;
 /
