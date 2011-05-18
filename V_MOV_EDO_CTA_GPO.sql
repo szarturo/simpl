@@ -47,8 +47,8 @@ AS
     C.CVE_CONCEPTO,
     ACC.ID_ACCESORIO,
     CASE
-      WHEN A.TX_NOTA = 'Movimiento extraordinario'
-      THEN D.DESC_LARGA
+      WHEN A.TX_NOTA = 'Ajuste Extraordinario'
+      THEN INITCAP(D.DESC_LARGA)
       WHEN A.TX_NOTA = 'Pago de prestamo'
       THEN 'Pago '
         || INITCAP(C.DESC_CORTA)
@@ -92,8 +92,8 @@ AS
     C.CVE_CONCEPTO,
     ACC.ID_ACCESORIO,
     CASE
-      WHEN A.TX_NOTA = 'Movimiento extraordinario'
-      THEN D.DESC_LARGA
+      WHEN A.TX_NOTA = 'Ajuste Extraordinario'
+      THEN INITCAP(D.DESC_LARGA)
       WHEN A.TX_NOTA = 'Pago de prestamo'
       THEN 'Pago '
         || INITCAP(C.DESC_CORTA)
@@ -113,10 +113,16 @@ AS
     CASE
       WHEN A.TX_NOTA = 'Pago de prestamo'
       THEN 'Pago prestamo'
+      WHEN A.TX_NOTA = 'Ajuste Extraordinario'
+      THEN INITCAP(D.DESC_LARGA)
+      
     END AS DESCRIPCION,
     CASE
       WHEN A.TX_NOTA = 'Pago de prestamo'
       THEN SUM(A.IMP_NETO)
+     WHEN A.TX_NOTA = 'Ajuste Extraordinario'
+      THEN SUM(A.IMP_NETO)      
+      
     END AS IMP_PAGO,
     0   AS IMP_CONCEPTO,
     A.ID_MOVIMIENTO
@@ -139,10 +145,11 @@ AS
     '',
     0,
     CASE
-      WHEN A.TX_NOTA = 'Movimiento extraordinario'
-      THEN D.DESC_LARGA
       WHEN A.TX_NOTA = 'Pago de prestamo'
       THEN 'Pago prestamo'
+      WHEN A.TX_NOTA = 'Ajuste Extraordinario'
+      THEN INITCAP(D.DESC_LARGA)
+      
     END,
     A.TX_NOTA,
     0,
