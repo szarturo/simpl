@@ -75,13 +75,19 @@ AS
     '',
     0,
     CASE
-      WHEN A.TX_NOTA = 'Pago de prestamo'
+      WHEN (A.TX_NOTA     = 'Pago de prestamo'
+      AND A.CVE_OPERACION = 'CRPAGOPRES')
       THEN 'Pago prestamo'
+      WHEN A.CVE_OPERACION = 'EXTDEF'
+      THEN 'Liquidación por defunción'
       WHEN A.TX_NOTA = 'Ajuste Extraordinario'
       THEN INITCAP(D.DESC_LARGA)
     END AS DESCRIPCION,
     CASE
-      WHEN A.TX_NOTA = 'Pago de prestamo'
+      WHEN (A.TX_NOTA     = 'Pago de prestamo'
+      AND A.CVE_OPERACION = 'CRPAGOPRES')
+      THEN A.IMP_NETO
+      WHEN A.CVE_OPERACION = 'EXTDEF'
       THEN A.IMP_NETO
       WHEN A.TX_NOTA = 'Ajuste Extraordinario'
       THEN A.IMP_NETO
