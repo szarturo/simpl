@@ -1,6 +1,7 @@
 CREATE OR REPLACE FORCE VIEW V_MOV_EDO_CTA_GPO ("CVE_GPO_EMPRESA", "CVE_EMPRESA", "ID_PRESTAMO", "F_OPERACION", "NUM_PAGO_AMORTIZACION", "F_APLICACION", "CVE_CONCEPTO", "ID_ACCESORIO", "DESC_MOVIMIENTO", "IMP_PAGO", "IMP_CONCEPTO", "ID_MOVIMIENTO")
 AS
-  SELECT G.CVE_GPO_EMPRESA,
+    SELECT 
+    G.CVE_GPO_EMPRESA,
     G.CVE_EMPRESA,
     G.ID_PRESTAMO_GRUPO  AS ID_PRESTAMO,
     A.FECHA_AMORTIZACION AS F_OPERACION,
@@ -111,18 +112,18 @@ AS
     '',
     0,
     CASE
-      WHEN A.TX_NOTA = 'Pago de prestamo'
+      WHEN A.TX_NOTA = 'Pago de prestamo' and a.cve_operacion = 'CRPAGOPRES'
       THEN 'Pago prestamo'
+      WHEN A.CVE_OPERACION = 'EXTDEF'
+      THEN 'Liquidación por defunción'
       WHEN A.TX_NOTA = 'Ajuste Extraordinario'
       THEN INITCAP(D.DESC_LARGA)
-      
     END AS DESCRIPCION,
     CASE
       WHEN A.TX_NOTA = 'Pago de prestamo'
       THEN SUM(A.IMP_NETO)
-     WHEN A.TX_NOTA = 'Ajuste Extraordinario'
-      THEN SUM(A.IMP_NETO)      
-      
+      WHEN A.TX_NOTA = 'Ajuste Extraordinario'
+      THEN SUM(A.IMP_NETO)
     END AS IMP_PAGO,
     0   AS IMP_CONCEPTO,
     A.ID_MOVIMIENTO
@@ -145,11 +146,12 @@ AS
     '',
     0,
     CASE
-      WHEN A.TX_NOTA = 'Pago de prestamo'
+      WHEN A.TX_NOTA = 'Pago de prestamo' and a.cve_operacion = 'CRPAGOPRES'
       THEN 'Pago prestamo'
+      WHEN A.CVE_OPERACION = 'EXTDEF'
+      THEN 'Liquidación por defunción'
       WHEN A.TX_NOTA = 'Ajuste Extraordinario'
       THEN INITCAP(D.DESC_LARGA)
-      
     END,
     A.TX_NOTA,
     0,
