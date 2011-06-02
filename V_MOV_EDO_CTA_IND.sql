@@ -1,5 +1,11 @@
-CREATE OR REPLACE FORCE VIEW V_MOV_EDO_CTA_IND ("CVE_GPO_EMPRESA", "CVE_EMPRESA", "ID_PRESTAMO", "F_OPERACION", "NUM_PAGO_AMORTIZACION", "F_APLICACION", "CVE_CONCEPTO", "ID_ACCESORIO", "DESC_MOVIMIENTO", "IMP_PAGO", "IMP_CONCEPTO", "ID_MOVIMIENTO")
-AS
+--------------------------------------------------------
+-- Archivo creado  - miércoles-junio-01-2011   
+--------------------------------------------------------
+--------------------------------------------------------
+--  DDL for View V_MOV_EDO_CTA_IND
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW V_MOV_EDO_CTA_IND ("CVE_GPO_EMPRESA", "CVE_EMPRESA", "ID_PRESTAMO", "F_OPERACION", "NUM_PAGO_AMORTIZACION", "F_APLICACION", "CVE_CONCEPTO", "ID_ACCESORIO", "DESC_MOVIMIENTO", "IMP_PAGO", "IMP_CONCEPTO", "ID_MOVIMIENTO") AS 
   SELECT A.CVE_GPO_EMPRESA,
     A.CVE_EMPRESA,
     A.ID_PRESTAMO,
@@ -23,6 +29,7 @@ AS
   AND ACC.CVE_EMPRESA (+)    = B.CVE_EMPRESA
   AND ACC.ID_ACCESORIO (+)   = B.ID_ACCESORIO
   UNION ALL
+  -- Recupera el detalle de los conceptos desde el movimiento
   SELECT A.CVE_GPO_EMPRESA,
     A.CVE_EMPRESA,
     A.ID_PRESTAMO,
@@ -31,20 +38,13 @@ AS
     A.F_APLICACION,
     C.CVE_CONCEPTO,
     ACC.ID_ACCESORIO,
-    CASE
-      WHEN A.TX_NOTA = 'Ajuste Extraordinario'
-      THEN 'Ajuste '
-        || INITCAP(C.DESC_CORTA)
-      WHEN A.TX_NOTA = 'Pago de prestamo'
-      THEN 'Pago '
-        || INITCAP(C.DESC_CORTA)
-    END AS DESCRIPCION,
-    0   AS IMP_PAGO,
+    INITCAP(D.DESC_CORTA) || INITCAP(C.DESC_CORTA) AS DESCRIPCION,
+    0                        AS IMP_PAGO,
     CASE
       WHEN D.CVE_AFECTA_CREDITO = 'D'
       THEN B.IMP_CONCEPTO
       WHEN D.CVE_AFECTA_CREDITO = 'I'
-      THEN -B.IMP_CONCEPTO
+      THEN - B.IMP_CONCEPTO
     END AS IMP_CONCEPTO,
     A.ID_MOVIMIENTO
   FROM PFIN_MOVIMIENTO A,
@@ -62,10 +62,12 @@ AS
   AND D.CVE_GPO_EMPRESA      = A.CVE_GPO_EMPRESA
   AND D.CVE_EMPRESA          = A.CVE_EMPRESA
   AND D.CVE_OPERACION        = A.CVE_OPERACION
+  AND D.CVE_AFECTA_CREDITO IN ('I','D')
   AND ACC.CVE_GPO_EMPRESA (+)= C.CVE_GPO_EMPRESA
   AND ACC.CVE_EMPRESA (+)    = C.CVE_EMPRESA
   AND ACC.ID_ACCESORIO (+)   = C.ID_ACCESORIO
   UNION ALL
+  -- Recupera el movimiento de pago
   SELECT A.CVE_GPO_EMPRESA,
     A.CVE_EMPRESA,
     A.ID_PRESTAMO,
@@ -74,23 +76,12 @@ AS
     A.F_APLICACION,
     '',
     0,
+    INITCAP(D.DESC_LARGA) AS DESCRIPCION,
     CASE
-      WHEN (A.TX_NOTA     = 'Pago de prestamo'
-      AND A.CVE_OPERACION = 'CRPAGOPRES')
-      THEN 'Pago prestamo'
-      WHEN A.CVE_OPERACION = 'EXTDEF'
-      THEN 'Liquidación por defunción'
-      WHEN A.TX_NOTA = 'Ajuste Extraordinario'
-      THEN INITCAP(D.DESC_LARGA)
-    END AS DESCRIPCION,
-    CASE
-      WHEN (A.TX_NOTA     = 'Pago de prestamo'
-      AND A.CVE_OPERACION = 'CRPAGOPRES')
+      WHEN D.CVE_AFECTA_CREDITO = 'D'
       THEN A.IMP_NETO
-      WHEN A.CVE_OPERACION = 'EXTDEF'
-      THEN A.IMP_NETO
-      WHEN A.TX_NOTA = 'Ajuste Extraordinario'
-      THEN A.IMP_NETO
+      WHEN D.CVE_AFECTA_CREDITO = 'I'
+      THEN A.IMP_NETO * -1
     END AS IMP_PAGO,
     0   AS IMP_CONCEPTO,
     A.ID_MOVIMIENTO
@@ -99,4 +90,5 @@ AS
   WHERE A.SIT_MOVIMIENTO <> 'CA'
   AND D.CVE_GPO_EMPRESA   = A.CVE_GPO_EMPRESA
   AND D.CVE_EMPRESA       = A.CVE_EMPRESA
-  AND D.CVE_OPERACION     = A.CVE_OPERACION;
+  AND D.CVE_OPERACION     = A.CVE_OPERACION
+  AND D.CVE_AFECTA_CREDITO IN ('I','D');

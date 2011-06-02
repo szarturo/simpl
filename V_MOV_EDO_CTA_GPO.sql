@@ -1,7 +1,12 @@
-CREATE OR REPLACE FORCE VIEW V_MOV_EDO_CTA_GPO ("CVE_GPO_EMPRESA", "CVE_EMPRESA", "ID_PRESTAMO", "F_OPERACION", "NUM_PAGO_AMORTIZACION", "F_APLICACION", "CVE_CONCEPTO", "ID_ACCESORIO", "DESC_MOVIMIENTO", "IMP_PAGO", "IMP_CONCEPTO", "ID_MOVIMIENTO")
-AS
-    SELECT 
-    G.CVE_GPO_EMPRESA,
+--------------------------------------------------------
+-- Archivo creado  - miércoles-junio-01-2011   
+--------------------------------------------------------
+--------------------------------------------------------
+--  DDL for View V_MOV_EDO_CTA_GPO
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW V_MOV_EDO_CTA_GPO ("CVE_GPO_EMPRESA", "CVE_EMPRESA", "ID_PRESTAMO", "F_OPERACION", "NUM_PAGO_AMORTIZACION", "F_APLICACION", "CVE_CONCEPTO", "ID_ACCESORIO", "DESC_MOVIMIENTO", "IMP_PAGO", "IMP_CONCEPTO", "ID_MOVIMIENTO") AS 
+  SELECT G.CVE_GPO_EMPRESA,
     G.CVE_EMPRESA,
     G.ID_PRESTAMO_GRUPO  AS ID_PRESTAMO,
     A.FECHA_AMORTIZACION AS F_OPERACION,
@@ -39,6 +44,7 @@ AS
     0,
     0
   UNION ALL
+  -- Recupera informacion de los conceptos que afectan al credito
   SELECT G.CVE_GPO_EMPRESA,
     G.CVE_EMPRESA,
     G.ID_PRESTAMO_GRUPO AS ID_PRESTAMO,
@@ -47,19 +53,13 @@ AS
     A.F_APLICACION,
     C.CVE_CONCEPTO,
     ACC.ID_ACCESORIO,
-    CASE
-      WHEN A.TX_NOTA = 'Ajuste Extraordinario'
-      THEN INITCAP(D.DESC_LARGA)
-      WHEN A.TX_NOTA = 'Pago de prestamo'
-      THEN 'Pago '
-        || INITCAP(C.DESC_CORTA)
-    END AS DESCRIPCION,
-    0   AS IMP_PAGO,
+    INITCAP(D.DESC_CORTA) || ' ' || INITCAP(C.DESC_CORTA) AS DESCRIPCION,
+    0 AS IMP_PAGO,
     CASE
       WHEN D.CVE_AFECTA_CREDITO = 'D'
       THEN SUM(B.IMP_CONCEPTO)
       WHEN D.CVE_AFECTA_CREDITO = 'I'
-      THEN -SUM(B.IMP_CONCEPTO)
+      THEN SUM(-B.IMP_CONCEPTO)
     END AS IMP_CONCEPTO,
     A.ID_MOVIMIENTO
   FROM SIM_PRESTAMO_GPO_DET G,
@@ -81,6 +81,7 @@ AS
   AND D.CVE_GPO_EMPRESA      = A.CVE_GPO_EMPRESA
   AND D.CVE_EMPRESA          = A.CVE_EMPRESA
   AND D.CVE_OPERACION        = A.CVE_OPERACION
+  AND D.CVE_AFECTA_CREDITO IN ('D','I')
   AND ACC.CVE_GPO_EMPRESA (+)= C.CVE_GPO_EMPRESA
   AND ACC.CVE_EMPRESA (+)    = C.CVE_EMPRESA
   AND ACC.ID_ACCESORIO (+)   = C.ID_ACCESORIO
@@ -92,17 +93,12 @@ AS
     A.F_APLICACION,
     C.CVE_CONCEPTO,
     ACC.ID_ACCESORIO,
-    CASE
-      WHEN A.TX_NOTA = 'Ajuste Extraordinario'
-      THEN INITCAP(D.DESC_LARGA)
-      WHEN A.TX_NOTA = 'Pago de prestamo'
-      THEN 'Pago '
-        || INITCAP(C.DESC_CORTA)
-    END,
+    INITCAP(D.DESC_CORTA) || ' ' || INITCAP(C.DESC_CORTA),
     0,
     D.CVE_AFECTA_CREDITO,
     A.ID_MOVIMIENTO
   UNION ALL
+  -- Recupera informacion del movimiento  
   SELECT G.CVE_GPO_EMPRESA,
     G.CVE_EMPRESA,
     G.ID_PRESTAMO_GRUPO AS ID_PRESTAMO,
@@ -111,20 +107,8 @@ AS
     A.F_APLICACION,
     '',
     0,
-    CASE
-      WHEN A.TX_NOTA = 'Pago de prestamo' and a.cve_operacion = 'CRPAGOPRES'
-      THEN 'Pago prestamo'
-      WHEN A.CVE_OPERACION = 'EXTDEF'
-      THEN 'Liquidación por defunción'
-      WHEN A.TX_NOTA = 'Ajuste Extraordinario'
-      THEN INITCAP(D.DESC_LARGA)
-    END AS DESCRIPCION,
-    CASE
-      WHEN A.TX_NOTA = 'Pago de prestamo'
-      THEN SUM(A.IMP_NETO)
-      WHEN A.TX_NOTA = 'Ajuste Extraordinario'
-      THEN SUM(A.IMP_NETO)
-    END AS IMP_PAGO,
+    INITCAP(D.DESC_LARGA) AS DESCRIPCION,
+    SUM(A.IMP_NETO * DECODE(D.CVE_AFECTA_CREDITO, 'D', 1, 'I', -1, 0)) AS IMP_PAGO,    
     0   AS IMP_CONCEPTO,
     A.ID_MOVIMIENTO
   FROM SIM_PRESTAMO_GPO_DET G,
@@ -137,6 +121,7 @@ AS
   AND D.CVE_GPO_EMPRESA   = A.CVE_GPO_EMPRESA
   AND D.CVE_EMPRESA       = A.CVE_EMPRESA
   AND D.CVE_OPERACION     = A.CVE_OPERACION
+  AND D.CVE_AFECTA_CREDITO IN ('D','I')
   GROUP BY G.CVE_GPO_EMPRESA,
     G.CVE_EMPRESA,
     G.ID_PRESTAMO_GRUPO,
@@ -145,14 +130,6 @@ AS
     A.F_APLICACION,
     '',
     0,
-    CASE
-      WHEN A.TX_NOTA = 'Pago de prestamo' and a.cve_operacion = 'CRPAGOPRES'
-      THEN 'Pago prestamo'
-      WHEN A.CVE_OPERACION = 'EXTDEF'
-      THEN 'Liquidación por defunción'
-      WHEN A.TX_NOTA = 'Ajuste Extraordinario'
-      THEN INITCAP(D.DESC_LARGA)
-    END,
-    A.TX_NOTA,
+    INITCAP(D.DESC_LARGA),
     0,
     A.ID_MOVIMIENTO;
