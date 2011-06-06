@@ -3168,11 +3168,12 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                  CVE_EMPRESA                   = pCveEmpresa       AND
                  ID_MOVIMIENTO                 = pIdMovimientoPago AND
                  NVL(ID_TRANSACCION_CANCELA,0) = 0                 AND
+                 NVL(ID_GRUPO,0)               <> 0                AND
                  CVE_OPERACION                 = cPagoPrestamo;
            
           EXCEPTION 
              WHEN NO_DATA_FOUND THEN
-                  pTxRespuesta := 'No existe el movimiento o no es un movimiento que pueda cancelarse';
+                  pTxRespuesta := 'No existe el movimiento o no es un movimiento que pueda cancelarse o el grupo del movimiento es cero';
                   RETURN -1;
        END;     
        
