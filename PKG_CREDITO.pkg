@@ -1175,8 +1175,8 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
         -- Cursor de conceptos pagados por el movimiento
         CURSOR curConceptoPagado IS 
            SELECT A.CVE_GPO_EMPRESA, A.CVE_EMPRESA, A.ID_PRESTAMO, A.NUM_PAGO_AMORTIZACION, B.CVE_CONCEPTO, 
-                  CASE WHEN O.CVE_AFECTA_CREDITO = cDecrementa THEN B.IMP_CONCEPTO
-                       WHEN O.CVE_AFECTA_CREDITO = cIncrementa THEN B.IMP_CONCEPTO * -1
+                  CASE WHEN O.CVE_AFECTA_CREDITO = cDecrementa THEN B.IMP_CONCEPTO * -1
+                       WHEN O.CVE_AFECTA_CREDITO = cIncrementa THEN B.IMP_CONCEPTO
                        ELSE 0
                   END AS IMP_CONCEPTO, C.ID_ACCESORIO
              FROM PFIN_MOVIMIENTO A, PFIN_MOVIMIENTO_DET B, PFIN_CAT_CONCEPTO C, PFIN_CAT_OPERACION O
