@@ -1,11 +1,5 @@
---------------------------------------------------------
--- Archivo creado  - miércoles-junio-22-2011   
---------------------------------------------------------
---------------------------------------------------------
---  DDL for View V_MOV_EDO_CTA_IND
---------------------------------------------------------
-
-  CREATE OR REPLACE FORCE VIEW V_MOV_EDO_CTA_IND ("CVE_GPO_EMPRESA", "CVE_EMPRESA", "ID_PRESTAMO", "F_OPERACION", "NUM_PAGO_AMORTIZACION", "F_APLICACION", "CVE_CONCEPTO", "ID_ACCESORIO", "DESC_MOVIMIENTO", "IMP_PAGO", "IMP_CONCEPTO", "ID_MOVIMIENTO") AS 
+CREATE OR REPLACE FORCE VIEW V_MOV_EDO_CTA_IND ("CVE_GPO_EMPRESA", "CVE_EMPRESA", "ID_PRESTAMO", "F_OPERACION", "NUM_PAGO_AMORTIZACION", "F_APLICACION", "CVE_CONCEPTO", "ID_ACCESORIO", "DESC_MOVIMIENTO", "IMP_PAGO", "IMP_CONCEPTO", "ID_MOVIMIENTO")
+AS
   SELECT A.CVE_GPO_EMPRESA,
     A.CVE_EMPRESA,
     A.ID_PRESTAMO,
@@ -39,14 +33,8 @@
     '',
     0,
     INITCAP(D.DESC_LARGA) AS DESCRIPCION,
-    CASE WHEN D.CVE_AFECTA_CREDITO = 'D' OR A.CVE_OPERACION = 'CANPAG' 
-                THEN A.IMP_NETO * DECODE(D.CVE_AFECTA_CREDITO, 'D', 1, 'I', -1, 0)
-         ELSE 0
-    END AS IMP_PAGO,
-    CASE WHEN D.CVE_AFECTA_CREDITO = 'I' AND A.CVE_OPERACION <> 'CANPAG' 
-              THEN A.IMP_NETO * DECODE(D.CVE_AFECTA_CREDITO, 'I', 1, 'D', -1, 0)
-         ELSE 0
-    END AS IMP_CONCEPTO,
+    A.IMP_NETO            AS IMP_PAGO,
+    0                     AS IMP_CONCEPTO,
     A.ID_MOVIMIENTO
   FROM PFIN_MOVIMIENTO A,
     PFIN_CAT_OPERACION D
