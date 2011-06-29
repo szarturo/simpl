@@ -13,13 +13,15 @@ CREATE OR REPLACE PACKAGE PKG_CREDITO AS
     cAbonoAjuste                        CONSTANT PFIN_MOVIMIENTO.CVE_OPERACION%TYPE              := 'ABAJUS';
     cCargoAjuste                        CONSTANT PFIN_MOVIMIENTO.CVE_OPERACION%TYPE              := 'CAAJUS';
     cPagoDefuncion                      CONSTANT PFIN_MOVIMIENTO.CVE_OPERACION%TYPE              := 'EXTDEF';
+	cCuentaIncobrable                   CONSTANT PFIN_MOVIMIENTO.CVE_OPERACION%TYPE              := 'CTAINCOB';
     cCancelaPago                        CONSTANT PFIN_MOVIMIENTO.CVE_OPERACION%TYPE              := 'CANPAG';
     cDepositoTesoreria                  CONSTANT PFIN_MOVIMIENTO.CVE_OPERACION%TYPE              := 'TEDEPEFE';    
     cImpBruto                           CONSTANT PFIN_MOVIMIENTO_DET.CVE_CONCEPTO%TYPE           := 'IMPBRU';
     cSitCancelada                       CONSTANT PFIN_MOVIMIENTO.SIT_MOVIMIENTO%TYPE             := 'CA';
     vgResultado                         NUMBER;
     cEtapaLiquidado                     CONSTANT SIM_CAT_ETAPA_PRESTAMO.ID_ETAPA_PRESTAMO%TYPE   := 8;
-    cEtapaLiqXDefuncion                 CONSTANT SIM_CAT_ETAPA_PRESTAMO.ID_ETAPA_PRESTAMO%TYPE   := 8;    
+    cEtapaLiqXDefuncion                 CONSTANT SIM_CAT_ETAPA_PRESTAMO.ID_ETAPA_PRESTAMO%TYPE   := 8; 
+    cEtapaCuentaIncobrable              CONSTANT SIM_CAT_ETAPA_PRESTAMO.ID_ETAPA_PRESTAMO%TYPE   := 9; 	
     
     -- Procedimiento que actuliza la informacion variable de los creditos, esto lo realiza para todas las amortizaciones
     -- pendientes de pago
@@ -156,6 +158,15 @@ CREATE OR REPLACE PACKAGE PKG_CREDITO AS
 
     -- Funcion utilizada para registrar el pago total de un credito individual en caso de que muera la persona
     FUNCTION fRegistraMovtoDefuncion(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
+                                     pCveEmpresa      IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
+                                     pIdPrestamo      IN PFIN_PRE_MOVIMIENTO.ID_PRESTAMO%TYPE,
+                                     pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
+                                     pFValor          IN PFIN_PRE_MOVIMIENTO.F_OPERACION%TYPE,
+                                     pTxRespuesta     OUT VARCHAR2)
+    RETURN NUMBER;
+    
+    -- Funcion utilizada para anular el saldo debido a que es una cuenta incobrable
+    FUNCTION fRegistraMovtoCuentaIncobrable(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
                                      pCveEmpresa      IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
                                      pIdPrestamo      IN PFIN_PRE_MOVIMIENTO.ID_PRESTAMO%TYPE,
                                      pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
@@ -3020,6 +3031,98 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
        
        RETURN 0;
     END fRegistraMovtoDefuncion;
+    
+    -- Funcion utilizada para anular el saldo debido a que es una cuenta incobrable
+    FUNCTION fRegistraMovtoCuentaIncobrable(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
+                                     pCveEmpresa      IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
+                                     pIdPrestamo      IN PFIN_PRE_MOVIMIENTO.ID_PRESTAMO%TYPE,
+                                     pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
+                                     pFValor          IN PFIN_PRE_MOVIMIENTO.F_OPERACION%TYPE,
+                                     pTxRespuesta     OUT VARCHAR2)
+    RETURN NUMBER
+       -- Cursor que devuelve los conceptos que deben liquidarse
+    IS
+       vlCveOperacion   PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE := cCuentaIncobrable;
+       vlImpDeuda       PFIN_PRE_MOVIMIENTO.IMP_NETO%TYPE;
+       vlIdCuenta       SIM_PRESTAMO.ID_CUENTA_REFERENCIA%TYPE;
+       vlIdPreMovto     PFIN_PRE_MOVIMIENTO.ID_PRE_MOVIMIENTO%TYPE;
+       vlIdMovimiento   PFIN_PRE_MOVIMIENTO.ID_MOVIMIENTO%TYPE;
+    BEGIN
+       -- Valida que sea un credito individual ya que solo puede morirse un individuo
+       IF fExistePresamoIndividual(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo) <> cVerdadero OR
+          fEsPrestamoGrupal(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo)        =  cVerdadero THEN
+          pTxRespuesta := 'El credito no existe o es un credito grupal';
+          RETURN -1;
+       END IF;
+       
+       -- Actualiza la informacion del credito
+        vgResultado := fActualizaInformacionCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, pFValor, pTxRespuesta);
+      
+       -- Recupera el saldo total del credito
+       SELECT SUM(IMP_NETO) * -1
+         INTO vlImpDeuda
+         FROM V_SIM_TABLA_AMORT_CONCEPTO 
+        WHERE CVE_GPO_EMPRESA       = pCveGpoEmpresa AND
+              CVE_EMPRESA           = pCveEmpresa    AND
+              ID_PRESTAMO           = pIdPrestamo;
+
+       IF vlImpDeuda <= 0 THEN
+          pTxRespuesta := 'El credito no tiene adeudos';
+          RETURN -1;
+       END IF;
+       
+       -- Recupera la cuenta asociada al credito
+       vlIdCuenta := fObtieneCuenta(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, pTxrespuesta);
+
+       DBMS_OUTPUT.PUT_LINE('CUENTA:' || vlIdCuenta);
+       
+       IF vlIdCuenta <= 0 THEN
+          RETURN -1;
+       END IF;
+       
+       -- Se obtiene el folio de grupo para las transacciones
+       SELECT SQ02_PFIN_PRE_MOVIMIENTO.NEXTVAL INTO vgFolioGrupo FROM DUAL;
+
+        -- Se obtiene el id del premovimiento
+       SELECT SQ01_PFIN_PRE_MOVIMIENTO.NEXTVAL INTO vlIdPreMovto FROM DUAL;
+
+       -- Se genera el premovimiento
+       PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, vlIdCuenta, pIdPrestamo,
+                                    cDivisaPeso, cAbonoAjuste, vlImpDeuda, 'AJUSTE', 'AJUSTE', 'Ajuste por cuenta incobrable',
+                                    vgFolioGrupo, pCveUsuario, pFValor, 0, pTxrespuesta);            
+
+       IF pTxrespuesta IS NOT NULL THEN 
+          RETURN 1; 
+       END IF;
+            
+       PKG_PROCESOS.pGeneraPreMovtoDet(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, cImpBruto, vlImpDeuda, 'Ajuste por cuenta incobrable', pTxrespuesta);
+
+       -- Se procesa el premovimiento
+       vlIdMovimiento := PKG_PROCESADOR_FINANCIERO.pprocesamovimiento(pcvegpoempresa, pcveempresa, vlIdPreMovto, 'PV', NULL, cFalso, ptxrespuesta);
+       
+       DBMS_OUTPUT.PUT_LINE('ACTUALIZO PREMOVTO:' || vlIdPreMovto);
+
+       -- Ejecuta el pago del credito utilizando la clave de operacion de cuenta incobrable
+       pAplicaPagoCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, vgFolioGrupo, pCveUsuario, pFValor, vlCveOperacion, pTxrespuesta);
+
+       IF pTxrespuesta IS NOT NULL THEN 
+          ROLLBACK;
+          RETURN 1; 
+       END IF;
+           
+       DBMS_OUTPUT.PUT_LINE('Aplico el credito');
+       
+       -- Actualiza la situacion del prestamo
+       UPDATE SIM_PRESTAMO
+          SET ID_ETAPA_PRESTAMO = cEtapaCuentaIncobrable
+        WHERE CVE_GPO_EMPRESA = pCveGpoEmpresa AND
+              CVE_EMPRESA     = pCveEmpresa    AND
+              ID_PRESTAMO     = pIdPrestamo;
+
+       DBMS_OUTPUT.PUT_LINE('Actualizo el prestamo');
+       
+       RETURN 0;
+    END fRegistraMovtoCuentaIncobrable;
     
     -- Funcion utilizada para registrar los diferentes tipos de pagos extraordinarios
     FUNCTION fRegistraMovtoExtraordinario(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
