@@ -1,4 +1,5 @@
-CREATE OR REPLACE PACKAGE PKG_CREDITO AS
+create or replace
+PACKAGE PKG_CREDITO AS
 
     -- Declaración de variables globales
     vgFechaSistema                      DATE;
@@ -219,8 +220,8 @@ CREATE OR REPLACE PACKAGE PKG_CREDITO AS
 End Pkg_Credito;
 /
 
-
-CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
+create or replace
+PACKAGE BODY PKG_CREDITO AS
     FUNCTION fObtieneCuenta(pCveGpoEmpresa   IN PFIN_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
                             pCveEmpresa      IN PFIN_MOVIMIENTO.CVE_EMPRESA%TYPE,
                             pIdPrestamo      IN PFIN_MOVIMIENTO.ID_PRESTAMO%TYPE,
@@ -1033,22 +1034,23 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                                           pIdMovimiento    IN PFIN_MOVIMIENTO.ID_MOVIMIENTO%TYPE,
                                           pTxRespuesta     OUT VARCHAR2)
     IS
-        vlInteresMora       SIM_TABLA_AMORTIZACION.IMP_INTERES%TYPE;
-        vlIVAInteresMora    SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlCapitalPagado     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlInteresPagado     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlIVAInteresPag     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlInteresExtPag     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlIVAIntExtPag      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpPagoTardio     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpIntMora        SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpIVAIntMora     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpDeuda          SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE; 
-        vlIdPrestamo        SIM_TABLA_AMORTIZACION.ID_PRESTAMO%TYPE;
-        vlNumAmortizacion   SIM_TABLA_AMORTIZACION.NUM_PAGO_AMORTIZACION%TYPE;
-        vlFValor            SIM_TABLA_AMORTIZACION.FECHA_AMORTIZACION%TYPE;
-        vlBPagado           SIM_TABLA_AMORTIZACION.B_PAGADO%TYPE;
-     	  vlImpVariaPago      SIM_PARAMETRO_GLOBAL.IMP_VAR_PAGO%TYPE;
+        vlInteresMora        SIM_TABLA_AMORTIZACION.IMP_INTERES%TYPE;
+        vlIVAInteresMora     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlCapitalPagado      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlInteresPagado      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlIVAInteresPag      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlInteresExtPag      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlIVAIntExtPag       SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpPagoTardio      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpGestionCobranza SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpIntMora         SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpIVAIntMora      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpDeuda           SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE; 
+        vlIdPrestamo         SIM_TABLA_AMORTIZACION.ID_PRESTAMO%TYPE;
+        vlNumAmortizacion    SIM_TABLA_AMORTIZACION.NUM_PAGO_AMORTIZACION%TYPE;
+        vlFValor             SIM_TABLA_AMORTIZACION.FECHA_AMORTIZACION%TYPE;
+        vlBPagado            SIM_TABLA_AMORTIZACION.B_PAGADO%TYPE;
+     	  vlImpVariaPago       SIM_PARAMETRO_GLOBAL.IMP_VAR_PAGO%TYPE;
          
         -- Cursor de conceptos pagados por el movimiento
         CURSOR curConceptoPagado IS 
@@ -1080,10 +1082,11 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                SUM(CASE WHEN B.CVE_CONCEPTO = 'INTEXT'   THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, 1, cIncrementa, -1, 0) ELSE 0 END) AS IMP_INTERES_EXTRA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'IVAINTEX' THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, 1, cIncrementa, -1, 0) ELSE 0 END) AS IMP_IVA_INTERES_EXTRA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'PAGOTARD' THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, 1, cIncrementa, -1, 0) ELSE 0 END) AS IMP_PAGO_TARDIO_PAGADO,
+               SUM(CASE WHEN B.CVE_CONCEPTO = 'GESCOB'   THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, 1, cIncrementa, -1, 0) ELSE 0 END) AS IMP_GESTION_COBRANZA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'INTMORA'  THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, 1, cIncrementa, -1, 0) ELSE 0 END) AS IMP_INTERES_MORA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'IVAINTMO' THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, 1, cIncrementa, -1, 0) ELSE 0 END) AS IMP_IVA_INTERES_MORA_PAGADO
           INTO vlIdPrestamo, vlNumAmortizacion, vlFValor, vlCapitalPagado, vlInteresPagado, vlIVAInteresPag, 
-               vlInteresExtPag, vlIVAIntExtPag, vlImpPagoTardio, vlImpIntMora, vlImpIVAIntMora
+               vlInteresExtPag, vlIVAIntExtPag, vlImpPagoTardio, vlImpGestionCobranza, vlImpIntMora, vlImpIVAIntMora
           FROM PFIN_MOVIMIENTO A, PFIN_MOVIMIENTO_DET B, PFIN_CAT_OPERACION O
          WHERE A.CVE_GPO_EMPRESA = pCveGpoEmpresa     AND
                A.CVE_EMPRESA     = pCveEmpresa        AND
@@ -1104,6 +1107,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                IMP_INTERES_EXTRA_PAGADO     = NVL(IMP_INTERES_EXTRA_PAGADO,0)      + NVL(vlInteresExtPag,0),
                IMP_IVA_INTERES_EXTRA_PAGADO = NVL(IMP_IVA_INTERES_EXTRA_PAGADO,0)  + NVL(vlIVAIntExtPag,0),
                IMP_PAGO_TARDIO_PAGADO       = NVL(IMP_PAGO_TARDIO_PAGADO,0)        + NVL(vlImpPagoTardio,0),
+               IMP_GESTION_COBRANZA_PAGADO  = NVL(IMP_GESTION_COBRANZA_PAGADO,0)   + NVL(vlImpGestionCobranza,0),
                IMP_INTERES_MORA_PAGADO      = NVL(IMP_INTERES_MORA_PAGADO,0)       + NVL(vlImpIntMora,0),
                IMP_IVA_INTERES_MORA_PAGADO  = NVL(IMP_IVA_INTERES_MORA_PAGADO,0)   + NVL(vlImpIVAIntMora,0),
                FECHA_AMORT_PAGO_ULTIMO      = vlFValor
@@ -1166,22 +1170,23 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                                          pIdMovimiento    IN PFIN_MOVIMIENTO.ID_MOVIMIENTO%TYPE,
                                          pTxRespuesta     OUT VARCHAR2)
     IS
-        vlInteresMora       SIM_TABLA_AMORTIZACION.IMP_INTERES%TYPE;
-        vlIVAInteresMora    SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlCapitalPagado     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlInteresPagado     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlIVAInteresPag     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlInteresExtPag     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlIVAIntExtPag      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpPagoTardio     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpIntMora        SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpIVAIntMora     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpDeuda          SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE; 
-        vlIdPrestamo        SIM_TABLA_AMORTIZACION.ID_PRESTAMO%TYPE;
-        vlNumAmortizacion   SIM_TABLA_AMORTIZACION.NUM_PAGO_AMORTIZACION%TYPE;
-        vlFValor            SIM_TABLA_AMORTIZACION.FECHA_AMORTIZACION%TYPE;
-        vlBPagado           SIM_TABLA_AMORTIZACION.B_PAGADO%TYPE;
-     	  vlImpVariaPago      SIM_PARAMETRO_GLOBAL.IMP_VAR_PAGO%TYPE;
+        vlInteresMora        SIM_TABLA_AMORTIZACION.IMP_INTERES%TYPE;
+        vlIVAInteresMora     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlCapitalPagado      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlInteresPagado      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlIVAInteresPag      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlInteresExtPag      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlIVAIntExtPag       SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpPagoTardio      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpGestionCobranza SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpIntMora         SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpIVAIntMora      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpDeuda           SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE; 
+        vlIdPrestamo         SIM_TABLA_AMORTIZACION.ID_PRESTAMO%TYPE;
+        vlNumAmortizacion    SIM_TABLA_AMORTIZACION.NUM_PAGO_AMORTIZACION%TYPE;
+        vlFValor             SIM_TABLA_AMORTIZACION.FECHA_AMORTIZACION%TYPE;
+        vlBPagado            SIM_TABLA_AMORTIZACION.B_PAGADO%TYPE;
+     	  vlImpVariaPago       SIM_PARAMETRO_GLOBAL.IMP_VAR_PAGO%TYPE;
          
         -- Cursor de conceptos pagados por el movimiento
         CURSOR curConceptoPagado IS 
@@ -1213,10 +1218,11 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                SUM(CASE WHEN B.CVE_CONCEPTO = 'INTEXT'   THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, -1, cIncrementa, 1, 0) ELSE 0 END) AS IMP_INTERES_EXTRA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'IVAINTEX' THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, -1, cIncrementa, 1, 0) ELSE 0 END) AS IMP_IVA_INTERES_EXTRA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'PAGOTARD' THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, -1, cIncrementa, 1, 0) ELSE 0 END) AS IMP_PAGO_TARDIO_PAGADO,
+               SUM(CASE WHEN B.CVE_CONCEPTO = 'GESCOB'   THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, -1, cIncrementa, 1, 0) ELSE 0 END) AS IMP_GESTION_COBRANZA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'INTMORA'  THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, -1, cIncrementa, 1, 0) ELSE 0 END) AS IMP_INTERES_MORA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'IVAINTMO' THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, -1, cIncrementa, 1, 0) ELSE 0 END) AS IMP_IVA_INTERES_MORA_PAGADO
           INTO vlIdPrestamo, vlNumAmortizacion, vlFValor, vlCapitalPagado, vlInteresPagado, vlIVAInteresPag, 
-               vlInteresExtPag, vlIVAIntExtPag, vlImpPagoTardio, vlImpIntMora, vlImpIVAIntMora
+               vlInteresExtPag, vlIVAIntExtPag, vlImpPagoTardio, vlImpGestionCobranza, vlImpIntMora, vlImpIVAIntMora
           FROM PFIN_MOVIMIENTO A, PFIN_MOVIMIENTO_DET B, PFIN_CAT_OPERACION O
          WHERE A.CVE_GPO_EMPRESA = pCveGpoEmpresa     AND
                A.CVE_EMPRESA     = pCveEmpresa        AND
@@ -1237,6 +1243,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                IMP_EXT_INTERES_EXTRA     = NVL(IMP_EXT_INTERES_EXTRA,0)      + NVL(vlInteresExtPag,0),
                IMP_EXT_IVA_INTERES_EXTRA = NVL(IMP_EXT_IVA_INTERES_EXTRA,0)  + NVL(vlIVAIntExtPag,0),
                IMP_EXT_PAGO_TARDIO       = NVL(IMP_EXT_PAGO_TARDIO,0)        + NVL(vlImpPagoTardio,0),
+               IMP_EXT_GESTION_COBRANZA  = NVL(IMP_EXT_GESTION_COBRANZA,0)   + NVL(vlImpGestionCobranza,0),
                IMP_EXT_INTERES_MORA      = NVL(IMP_EXT_INTERES_MORA,0)       + NVL(vlImpIntMora,0),
                IMP_EXT_IVA_INTERES_MORA  = NVL(IMP_EXT_IVA_INTERES_MORA,0)   + NVL(vlImpIVAIntMora,0)
          WHERE CVE_GPO_EMPRESA       = pCveGpoEmpresa
@@ -3751,4 +3758,3 @@ BEGIN
    vgFechaSistema := PKG_PROCESOS.DameFechaSistema('SIM', 'CREDICONFIA');
    
 END PKG_CREDITO;
-/
