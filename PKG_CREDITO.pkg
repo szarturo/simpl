@@ -1,7 +1,6 @@
-create or replace
-PACKAGE PKG_CREDITO AS
+CREATE OR REPLACE PACKAGE PKG_CREDITO AS
 
-    -- Declaración de variables globales
+    -- Declaraci?n de variables globales
     vgFechaSistema                      DATE;
     vgFolioGrupo                        NUMBER;
     cFalso                              CONSTANT VARCHAR2(1)                                     := 'F';
@@ -37,12 +36,12 @@ PACKAGE PKG_CREDITO AS
 
     --********************************************************************************************************--
     --*     pGeneraTablaAmortizacion                                                                         *--
-    --*     Propósito:  Generar la tabla de amortización de un préstamo de un cliente                        *--
-    --*     Parámetros:                                                                                      *--
+    --*     Prop?sito:  Generar la tabla de amortizaci?n de un pr?stamo de un cliente                        *--
+    --*     Par?metros:                                                                                      *--
     --*         pCveGpoEmpresa:     Clave de Grupo de Empresa                                                *--
     --*         pCveEmpresa:        Clave de Empresa                                                         *--
-    --*         pIdPrestamo:        Indentificador del préstamo                                              *--
-    --*         pTxRespuesta:       Parámetro de salida que indica el resultado de la operación              *--
+    --*         pIdPrestamo:        Indentificador del pr?stamo                                              *--
+    --*         pTxRespuesta:       Par?metro de salida que indica el resultado de la operaci?n              *--
     --********************************************************************************************************--
     PROCEDURE pGeneraTablaAmortizacion(pCveGpoEmpresa   IN SIM_PRESTAMO.CVE_GPO_EMPRESA%TYPE,
                                        pCveEmpresa      IN SIM_PRESTAMO.CVE_EMPRESA%TYPE,
@@ -52,7 +51,7 @@ PACKAGE PKG_CREDITO AS
 
     --********************************************************************************************************--
     --*     pAplicaPagoCreditoPorAmort                                                                       *--
-    --*     Propósito:  Aplicar el pago de un préstamo y distribuirlo en los diferentes conceptos            *--
+    --*     Prop?sito:  Aplicar el pago de un pr?stamo y distribuirlo en los diferentes conceptos            *--
     --*                 este pago puede ser por ajuste, defuncion o pago normal                              *--
     --*                 Este metodo es el que inserta el pago para cada amortizacion ya que los pagos        *--
     --*                 se realizan para cada una de las amortizaciones                                      *--
@@ -72,7 +71,7 @@ PACKAGE PKG_CREDITO AS
 
     --********************************************************************************************************--
     --*     pAplicaPagoCredito (Recargado para que no pida pCveOperacion)                                    *--
-    --*     Propósito:  Aplicar el pago de un préstamo y distribuirlo en los diferentes conceptos            *--
+    --*     Prop?sito:  Aplicar el pago de un pr?stamo y distribuirlo en los diferentes conceptos            *--
     --*                 este metodo envia siempre la pCveOperacion = cPagoPrestamo                           *--
     --*                 Es utilizado para el llamado desde la pantalla de pago de prestamo                   *--
     --********************************************************************************************************--
@@ -86,7 +85,7 @@ PACKAGE PKG_CREDITO AS
 
     --********************************************************************************************************--
     --*     pAplicaPagoCredito                                                                               *--
-    --*     Propósito:  Aplicar el pago de un préstamo y distribuirlo en los diferentes conceptos            *--
+    --*     Prop?sito:  Aplicar el pago de un pr?stamo y distribuirlo en los diferentes conceptos            *--
     --*                 este pago puede ser por ajuste, defuncion o pago normal                              *--
     --********************************************************************************************************--
     PROCEDURE pAplicaPagoCredito(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
@@ -100,13 +99,13 @@ PACKAGE PKG_CREDITO AS
 
     --********************************************************************************************************--
     --*     DameFechaValida                                                                                  *--
-    --*     Propósito:  Obtener una fecha válida para las amortizaciones y fechas de liquidación             *--
-    --*     Parámetros:                                                                                      *--
+    --*     Prop?sito:  Obtener una fecha v?lida para las amortizaciones y fechas de liquidaci?n             *--
+    --*     Par?metros:                                                                                      *--
     --*         pCveGpoEmpresa:     Clave de Grupo de Empresa                                                *--
     --*         pCveEmpresa:        Clave de Empresa                                                         *--
     --*         pFecha              Fecha a validar                                                          *--
-    --*         pCvePais            Clave del país a validar días festivos                                   *--
-    --*         pTxRespuesta:       Parámetro de salida que indica el resultado de la operación              *--
+    --*         pCvePais            Clave del pa?s a validar d?as festivos                                   *--
+    --*         pTxRespuesta:       Par?metro de salida que indica el resultado de la operaci?n              *--
     --********************************************************************************************************--
     FUNCTION DameFechaValida (pCveGpoEmpresa   IN SIM_PRESTAMO.CVE_GPO_EMPRESA%TYPE,
                               pCveEmpresa      IN SIM_PRESTAMO.CVE_EMPRESA%TYPE,
@@ -118,11 +117,11 @@ PACKAGE PKG_CREDITO AS
 
     --********************************************************************************************************--
     --*     DameTasaMoratoriaDiaria                                                                          *--
-    --*     Propósito:  Obtener la tasa de interés moratorio en caso de aplicar, de lo contrario regresa 0   *--
-    --*     Parámetros:                                                                                      *--
+    --*     Prop?sito:  Obtener la tasa de inter?s moratorio en caso de aplicar, de lo contrario regresa 0   *--
+    --*     Par?metros:                                                                                      *--
     --*         pCveGpoEmpresa:     Clave de Grupo de Empresa                                                *--
     --*         pCveEmpresa:        Clave de Empresa                                                         *--
-    --*         pIdPrestamo         Identificador del préstamo                                               *--
+    --*         pIdPrestamo         Identificador del pr?stamo                                               *--
     --********************************************************************************************************--
     FUNCTION DameTasaMoratoriaDiaria(pCveGpoEmpresa   IN SIM_PRESTAMO.CVE_GPO_EMPRESA%TYPE,
                                      pCveEmpresa      IN SIM_PRESTAMO.CVE_EMPRESA%TYPE,
@@ -131,8 +130,8 @@ PACKAGE PKG_CREDITO AS
 
     --********************************************************************************************************--
     --*     dameIdTasaRefDet                                                                                 *--
-    --*     Propósito:  Obtener el Id de referencia más actual de una tasa                                   *--
-    --*     Parámetros:                                                                                      *--
+    --*     Prop?sito:  Obtener el Id de referencia m?s actual de una tasa                                   *--
+    --*     Par?metros:                                                                                      *--
     --*         pCveGpoEmpresa:     Clave de Grupo de Empresa                                                *--
     --*         pCveEmpresa:        Clave de Empresa                                                         *--
     --*         pIdTasaRef:         Identificador de la tasa de referencia                                   *--
@@ -220,8 +219,8 @@ PACKAGE PKG_CREDITO AS
 End Pkg_Credito;
 /
 
-create or replace
-PACKAGE BODY PKG_CREDITO AS
+
+CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
     FUNCTION fObtieneCuenta(pCveGpoEmpresa   IN PFIN_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
                             pCveEmpresa      IN PFIN_MOVIMIENTO.CVE_EMPRESA%TYPE,
                             pIdPrestamo      IN PFIN_MOVIMIENTO.ID_PRESTAMO%TYPE,
@@ -318,7 +317,7 @@ PACKAGE BODY PKG_CREDITO AS
            AND P.CVE_EMPRESA     = pCveEmpresa
         ORDER BY P.ID_PRESTAMO;
         
-      --Cursor de cada importe que se tiene que pagar a capital y su fecha de amortización para un prestamo
+      --Cursor de cada importe que se tiene que pagar a capital y su fecha de amortizaci?n para un prestamo
       CURSOR curAmortizacionesCapital IS
         SELECT IMP_CAPITAL_AMORT, FECHA_AMORTIZACION
           FROM SIM_TABLA_AMORTIZACION
@@ -348,7 +347,7 @@ PACKAGE BODY PKG_CREDITO AS
            
         IF vlIdDistribucionPago = 1 THEN
           --El calculo de dias de antiguedad se hace sobre el capital
-          --Falta incluir cuando el último concepto a pagar es un accesorio
+          --Falta incluir cuando el ?ltimo concepto a pagar es un accesorio
           
           --Obtiene la suma total de pagos aplicados a capital del prestamo
           SELECT SUM(TA.IMP_CAPITAL_AMORT_PAGADO) IMP_CAPITAL_AMORT_PAGADO
@@ -360,7 +359,7 @@ PACKAGE BODY PKG_CREDITO AS
             
           vlIdPrestamo := vlBufPrestamo.ID_PRESTAMO;
           
-          -- Itera cada importe que se tiene que pagar a capital y su fecha de amortización de un prestamo
+          -- Itera cada importe que se tiene que pagar a capital y su fecha de amortizaci?n de un prestamo
           FOR vlBufAmortizaciones IN curAmortizacionesCapital LOOP
             
             vlSumaPagosCapital := vlSumaPagosCapital - vlBufAmortizaciones.IMP_CAPITAL_AMORT;
@@ -377,14 +376,14 @@ PACKAGE BODY PKG_CREDITO AS
             
           END LOOP;
         
-         --Actualiza los días de antiguedad para el prestamo individual
+         --Actualiza los d?as de antiguedad para el prestamo individual
          UPDATE SIM_PRESTAMO
              SET NUM_DIAS_ANTIGUEDAD = vlDiasAntiguedad
            WHERE CVE_GPO_EMPRESA     = pCveGpoEmpresa
              AND CVE_EMPRESA         = pCveEmpresa
              AND ID_PRESTAMO         = vlIdPrestamo;
           
-          --Actualiza los días de antiguedad para el prestamo grupal
+          --Actualiza los d?as de antiguedad para el prestamo grupal
           UPDATE SIM_PRESTAMO_GRUPO
              SET NUM_DIAS_ANTIGUEDAD = CASE WHEN vlDiasAntiguedad >= NVL(NUM_DIAS_ANTIGUEDAD,0) THEN vlDiasAntiguedad
                                             ELSE NUM_DIAS_ANTIGUEDAD
@@ -652,13 +651,13 @@ PACKAGE BODY PKG_CREDITO AS
         vlTasaIntMora   SIM_TABLA_AMORTIZACION.TASA_INTERES%TYPE;
     BEGIN
         -- Se obtiene el valor de la tasa
-        SELECT NVL(CASE WHEN P.ID_TIPO_RECARGO IN (3,5) THEN -- Si el tipo de recargo implica interés moratorio regresa el valor de la tasa
+        SELECT NVL(CASE WHEN P.ID_TIPO_RECARGO IN (3,5) THEN -- Si el tipo de recargo implica inter?s moratorio regresa el valor de la tasa
                              CASE WHEN P.TIPO_TASA_RECARGO = 'Fija independiente' THEN 
                                        ROUND(DECODE(P.TIPO_TASA,'No indexada', P.TASA_RECARGO, T.VALOR)/100/
             			 		                 DECODE(P.TIPO_TASA,'No indexada', PT.DIAS, TRV.DIAS) ,20)
                                   ELSE P.VALOR_TASA * P.FACTOR_TASA_RECARGO
                              END
-                        ELSE 0 -- Si el recargo no es de tipo interés moratorio regresa 0 en el valor de la tasa
+                        ELSE 0 -- Si el recargo no es de tipo inter?s moratorio regresa 0 en el valor de la tasa
                    END, 0) AS TASA_INTERES_MORATORIO
           INTO vlTasaIntMora
           FROM SIM_PRESTAMO P, SIM_CAT_SUCURSAL S, SIM_CAT_PERIODICIDAD PT, SIM_CAT_PERIODICIDAD TRV, 
@@ -674,19 +673,19 @@ PACKAGE BODY PKG_CREDITO AS
             AND P.CVE_GPO_EMPRESA 	            = PT.CVE_GPO_EMPRESA(+)
             AND P.CVE_EMPRESA     	            = PT.CVE_EMPRESA(+)
             AND P.ID_PERIODICIDAD_TASA_RECARGO  = PT.ID_PERIODICIDAD(+)
-            --  Relación con la tasa de referencia
+            --  Relaci?n con la tasa de referencia
             AND P.CVE_GPO_EMPRESA 	            = TR.CVE_GPO_EMPRESA(+)
             AND P.CVE_EMPRESA     	            = TR.CVE_EMPRESA(+)
             AND P.ID_TASA_REFERENCIA_RECARGO    = TR.ID_TASA_REFERENCIA(+)
-            --  Relación con el detalle de la tasa de referencia
+            --  Relaci?n con el detalle de la tasa de referencia
             AND TR.CVE_GPO_EMPRESA 	            = TRV.CVE_GPO_EMPRESA(+)
             AND TR.CVE_EMPRESA     	            = TRV.CVE_EMPRESA(+)
             AND TR.ID_PERIODICIDAD              = TRV.ID_PERIODICIDAD(+)
-            --  Relación con la tasa de referencia
+            --  Relaci?n con la tasa de referencia
             AND P.CVE_GPO_EMPRESA 	            = T.CVE_GPO_EMPRESA(+)
             AND P.CVE_EMPRESA     	            = T.CVE_EMPRESA(+)
             AND P.ID_TASA_REFERENCIA_RECARGO    = T.ID_TASA_REFERENCIA(+)
-            -- Se obtiene el máximo de id referencia detalle, esto es la tasa más actual
+            -- Se obtiene el m?ximo de id referencia detalle, esto es la tasa m?s actual
             AND PKG_CREDITO.dameidtasarefdet(P.CVE_GPO_EMPRESA,P.CVE_EMPRESA,
                 P.ID_TASA_REFERENCIA_RECARGO) = T.ID_TASA_REFERENCIA_DETALLE(+);
 
@@ -765,7 +764,7 @@ PACKAGE BODY PKG_CREDITO AS
         IS
            vlFFind     DATE;
         BEGIN
-            -- Si existe la fecha como fecha válida regresa verdadero de otro modo falso
+            -- Si existe la fecha como fecha v?lida regresa verdadero de otro modo falso
             SELECT F_DIA_FESTIVO
               INTO vlFFind
               FROM PFIN_DIA_FESTIVO
@@ -782,7 +781,7 @@ PACKAGE BODY PKG_CREDITO AS
         END esDiaFestivo;
         
     BEGIN
-        -- Se obtienen los datos de la tabla de parámetros
+        -- Se obtienen los datos de la tabla de par?metros
         SELECT *
           INTO vlBufParametro
           FROM PFIN_PARAMETRO
@@ -813,7 +812,7 @@ PACKAGE BODY PKG_CREDITO AS
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
                 pTxRespuesta := '';
-                pTxrespuesta := CHR(10)||'No se encontró el parámetro del medio SYSTEM: '||CHR(10)||
+                pTxrespuesta := CHR(10)||'No se encontr? el par?metro del medio SYSTEM: '||CHR(10)||
                     ' Grupo Empresa: '||pCveGpoEmpresa||CHR(10)||
                     ' Empresa:       '||pCveEmpresa;
                 RETURN NULL;
@@ -844,10 +843,10 @@ PACKAGE BODY PKG_CREDITO AS
 
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
-                pTxrespuesta := CHR(10)||'No se encontró el monto autorizado del cliente: '||CHR(10)||
+                pTxrespuesta := CHR(10)||'No se encontr? el monto autorizado del cliente: '||CHR(10)||
                     ' Grupo Empresa: '||pCveGpoEmpresa||CHR(10)||
                     ' Empresa:       '||pCveEmpresa||CHR(10)||
-                    ' Préstamo:      '||pIdPrestamo||CHR(10)||
+                    ' Pr?stamo:      '||pIdPrestamo||CHR(10)||
                     ' Cliente:       '||pIdCliente;
                 RETURN 0;
             WHEN OTHERS THEN
@@ -879,10 +878,10 @@ PACKAGE BODY PKG_CREDITO AS
 
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
-                pTxrespuesta := CHR(10)||'No se encontró el cargo inicial: '||CHR(10)||
+                pTxrespuesta := CHR(10)||'No se encontr? el cargo inicial: '||CHR(10)||
                     ' Grupo Empresa: '||pCveGpoEmpresa||CHR(10)||
                     ' Empresa:       '||pCveEmpresa||CHR(10)||
-                    ' Préstamo:      '||pIdPrestamo||CHR(10);
+                    ' Pr?stamo:      '||pIdPrestamo||CHR(10);
                 RETURN 0;
             WHEN OTHERS THEN
                 pTxRespuesta := SQLERRM;
@@ -1034,23 +1033,22 @@ PACKAGE BODY PKG_CREDITO AS
                                           pIdMovimiento    IN PFIN_MOVIMIENTO.ID_MOVIMIENTO%TYPE,
                                           pTxRespuesta     OUT VARCHAR2)
     IS
-        vlInteresMora        SIM_TABLA_AMORTIZACION.IMP_INTERES%TYPE;
-        vlIVAInteresMora     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlCapitalPagado      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlInteresPagado      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlIVAInteresPag      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlInteresExtPag      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlIVAIntExtPag       SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpPagoTardio      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpGestionCobranza SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpIntMora         SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpIVAIntMora      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpDeuda           SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE; 
-        vlIdPrestamo         SIM_TABLA_AMORTIZACION.ID_PRESTAMO%TYPE;
-        vlNumAmortizacion    SIM_TABLA_AMORTIZACION.NUM_PAGO_AMORTIZACION%TYPE;
-        vlFValor             SIM_TABLA_AMORTIZACION.FECHA_AMORTIZACION%TYPE;
-        vlBPagado            SIM_TABLA_AMORTIZACION.B_PAGADO%TYPE;
-     	  vlImpVariaPago       SIM_PARAMETRO_GLOBAL.IMP_VAR_PAGO%TYPE;
+        vlInteresMora       SIM_TABLA_AMORTIZACION.IMP_INTERES%TYPE;
+        vlIVAInteresMora    SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlCapitalPagado     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlInteresPagado     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlIVAInteresPag     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlInteresExtPag     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlIVAIntExtPag      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpPagoTardio     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpIntMora        SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpIVAIntMora     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpDeuda          SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE; 
+        vlIdPrestamo        SIM_TABLA_AMORTIZACION.ID_PRESTAMO%TYPE;
+        vlNumAmortizacion   SIM_TABLA_AMORTIZACION.NUM_PAGO_AMORTIZACION%TYPE;
+        vlFValor            SIM_TABLA_AMORTIZACION.FECHA_AMORTIZACION%TYPE;
+        vlBPagado           SIM_TABLA_AMORTIZACION.B_PAGADO%TYPE;
+     	  vlImpVariaPago      SIM_PARAMETRO_GLOBAL.IMP_VAR_PAGO%TYPE;
          
         -- Cursor de conceptos pagados por el movimiento
         CURSOR curConceptoPagado IS 
@@ -1082,11 +1080,10 @@ PACKAGE BODY PKG_CREDITO AS
                SUM(CASE WHEN B.CVE_CONCEPTO = 'INTEXT'   THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, 1, cIncrementa, -1, 0) ELSE 0 END) AS IMP_INTERES_EXTRA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'IVAINTEX' THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, 1, cIncrementa, -1, 0) ELSE 0 END) AS IMP_IVA_INTERES_EXTRA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'PAGOTARD' THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, 1, cIncrementa, -1, 0) ELSE 0 END) AS IMP_PAGO_TARDIO_PAGADO,
-               SUM(CASE WHEN B.CVE_CONCEPTO = 'GESCOB'   THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, 1, cIncrementa, -1, 0) ELSE 0 END) AS IMP_GESTION_COBRANZA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'INTMORA'  THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, 1, cIncrementa, -1, 0) ELSE 0 END) AS IMP_INTERES_MORA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'IVAINTMO' THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, 1, cIncrementa, -1, 0) ELSE 0 END) AS IMP_IVA_INTERES_MORA_PAGADO
           INTO vlIdPrestamo, vlNumAmortizacion, vlFValor, vlCapitalPagado, vlInteresPagado, vlIVAInteresPag, 
-               vlInteresExtPag, vlIVAIntExtPag, vlImpPagoTardio, vlImpGestionCobranza, vlImpIntMora, vlImpIVAIntMora
+               vlInteresExtPag, vlIVAIntExtPag, vlImpPagoTardio, vlImpIntMora, vlImpIVAIntMora
           FROM PFIN_MOVIMIENTO A, PFIN_MOVIMIENTO_DET B, PFIN_CAT_OPERACION O
          WHERE A.CVE_GPO_EMPRESA = pCveGpoEmpresa     AND
                A.CVE_EMPRESA     = pCveEmpresa        AND
@@ -1107,7 +1104,6 @@ PACKAGE BODY PKG_CREDITO AS
                IMP_INTERES_EXTRA_PAGADO     = NVL(IMP_INTERES_EXTRA_PAGADO,0)      + NVL(vlInteresExtPag,0),
                IMP_IVA_INTERES_EXTRA_PAGADO = NVL(IMP_IVA_INTERES_EXTRA_PAGADO,0)  + NVL(vlIVAIntExtPag,0),
                IMP_PAGO_TARDIO_PAGADO       = NVL(IMP_PAGO_TARDIO_PAGADO,0)        + NVL(vlImpPagoTardio,0),
-               IMP_GESTION_COBRANZA_PAGADO  = NVL(IMP_GESTION_COBRANZA_PAGADO,0)   + NVL(vlImpGestionCobranza,0),
                IMP_INTERES_MORA_PAGADO      = NVL(IMP_INTERES_MORA_PAGADO,0)       + NVL(vlImpIntMora,0),
                IMP_IVA_INTERES_MORA_PAGADO  = NVL(IMP_IVA_INTERES_MORA_PAGADO,0)   + NVL(vlImpIVAIntMora,0),
                FECHA_AMORT_PAGO_ULTIMO      = vlFValor
@@ -1170,23 +1166,22 @@ PACKAGE BODY PKG_CREDITO AS
                                          pIdMovimiento    IN PFIN_MOVIMIENTO.ID_MOVIMIENTO%TYPE,
                                          pTxRespuesta     OUT VARCHAR2)
     IS
-        vlInteresMora        SIM_TABLA_AMORTIZACION.IMP_INTERES%TYPE;
-        vlIVAInteresMora     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlCapitalPagado      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlInteresPagado      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlIVAInteresPag      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlInteresExtPag      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlIVAIntExtPag       SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpPagoTardio      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpGestionCobranza SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpIntMora         SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpIVAIntMora      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
-        vlImpDeuda           SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE; 
-        vlIdPrestamo         SIM_TABLA_AMORTIZACION.ID_PRESTAMO%TYPE;
-        vlNumAmortizacion    SIM_TABLA_AMORTIZACION.NUM_PAGO_AMORTIZACION%TYPE;
-        vlFValor             SIM_TABLA_AMORTIZACION.FECHA_AMORTIZACION%TYPE;
-        vlBPagado            SIM_TABLA_AMORTIZACION.B_PAGADO%TYPE;
-     	  vlImpVariaPago       SIM_PARAMETRO_GLOBAL.IMP_VAR_PAGO%TYPE;
+        vlInteresMora       SIM_TABLA_AMORTIZACION.IMP_INTERES%TYPE;
+        vlIVAInteresMora    SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlCapitalPagado     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlInteresPagado     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlIVAInteresPag     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlInteresExtPag     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlIVAIntExtPag      SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpPagoTardio     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpIntMora        SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpIVAIntMora     SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE;
+        vlImpDeuda          SIM_TABLA_AMORTIZACION.IMP_IVA_INTERES%TYPE; 
+        vlIdPrestamo        SIM_TABLA_AMORTIZACION.ID_PRESTAMO%TYPE;
+        vlNumAmortizacion   SIM_TABLA_AMORTIZACION.NUM_PAGO_AMORTIZACION%TYPE;
+        vlFValor            SIM_TABLA_AMORTIZACION.FECHA_AMORTIZACION%TYPE;
+        vlBPagado           SIM_TABLA_AMORTIZACION.B_PAGADO%TYPE;
+     	  vlImpVariaPago      SIM_PARAMETRO_GLOBAL.IMP_VAR_PAGO%TYPE;
          
         -- Cursor de conceptos pagados por el movimiento
         CURSOR curConceptoPagado IS 
@@ -1218,11 +1213,10 @@ PACKAGE BODY PKG_CREDITO AS
                SUM(CASE WHEN B.CVE_CONCEPTO = 'INTEXT'   THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, -1, cIncrementa, 1, 0) ELSE 0 END) AS IMP_INTERES_EXTRA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'IVAINTEX' THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, -1, cIncrementa, 1, 0) ELSE 0 END) AS IMP_IVA_INTERES_EXTRA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'PAGOTARD' THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, -1, cIncrementa, 1, 0) ELSE 0 END) AS IMP_PAGO_TARDIO_PAGADO,
-               SUM(CASE WHEN B.CVE_CONCEPTO = 'GESCOB'   THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, -1, cIncrementa, 1, 0) ELSE 0 END) AS IMP_GESTION_COBRANZA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'INTMORA'  THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, -1, cIncrementa, 1, 0) ELSE 0 END) AS IMP_INTERES_MORA_PAGADO,
                SUM(CASE WHEN B.CVE_CONCEPTO = 'IVAINTMO' THEN IMP_CONCEPTO * DECODE(O.CVE_AFECTA_CREDITO, cDecrementa, -1, cIncrementa, 1, 0) ELSE 0 END) AS IMP_IVA_INTERES_MORA_PAGADO
           INTO vlIdPrestamo, vlNumAmortizacion, vlFValor, vlCapitalPagado, vlInteresPagado, vlIVAInteresPag, 
-               vlInteresExtPag, vlIVAIntExtPag, vlImpPagoTardio, vlImpGestionCobranza, vlImpIntMora, vlImpIVAIntMora
+               vlInteresExtPag, vlIVAIntExtPag, vlImpPagoTardio, vlImpIntMora, vlImpIVAIntMora
           FROM PFIN_MOVIMIENTO A, PFIN_MOVIMIENTO_DET B, PFIN_CAT_OPERACION O
          WHERE A.CVE_GPO_EMPRESA = pCveGpoEmpresa     AND
                A.CVE_EMPRESA     = pCveEmpresa        AND
@@ -1243,7 +1237,6 @@ PACKAGE BODY PKG_CREDITO AS
                IMP_EXT_INTERES_EXTRA     = NVL(IMP_EXT_INTERES_EXTRA,0)      + NVL(vlInteresExtPag,0),
                IMP_EXT_IVA_INTERES_EXTRA = NVL(IMP_EXT_IVA_INTERES_EXTRA,0)  + NVL(vlIVAIntExtPag,0),
                IMP_EXT_PAGO_TARDIO       = NVL(IMP_EXT_PAGO_TARDIO,0)        + NVL(vlImpPagoTardio,0),
-               IMP_EXT_GESTION_COBRANZA  = NVL(IMP_EXT_GESTION_COBRANZA,0)   + NVL(vlImpGestionCobranza,0),
                IMP_EXT_INTERES_MORA      = NVL(IMP_EXT_INTERES_MORA,0)       + NVL(vlImpIntMora,0),
                IMP_EXT_IVA_INTERES_MORA  = NVL(IMP_EXT_IVA_INTERES_MORA,0)   + NVL(vlImpIVAIntMora,0)
          WHERE CVE_GPO_EMPRESA       = pCveGpoEmpresa
@@ -1326,7 +1319,7 @@ PACKAGE BODY PKG_CREDITO AS
 
     CURSOR curAccesorios IS
    	
-   	    -- Cursor que obtiene los accesorios que tiene relacionados el préstamo
+   	    -- Cursor que obtiene los accesorios que tiene relacionados el pr?stamo
         SELECT C.ID_CARGO_COMISION, C.ID_FORMA_APLICACION, C.VALOR VALOR_CARGO, U.VALOR VALOR_UNIDAD, 
                PC.DIAS DIAS_CARGO, PP.DIAS DIAS_PRODUCTO, CASE WHEN NVL(CA.TASA_IVA,0) <> 0 THEN NVL(SUC.TASA_IVA ,0) ELSE 0 END AS TASA_IVA
           FROM SIM_PRESTAMO P, SIM_PRESTAMO_CARGO_COMISION C, SIM_CAT_ACCESORIO CA, SIM_CAT_PERIODICIDAD PC, 
@@ -1384,7 +1377,7 @@ PACKAGE BODY PKG_CREDITO AS
                RETURN;
             END IF;
 
-            -- Se obtienen los datos genéricos del préstamo
+            -- Se obtienen los datos gen?ricos del pr?stamo
             SELECT P.ID_CLIENTE, P.ID_GRUPO, P.FECHA_ENTREGA, P.CVE_METODO, S.ID_SUCURSAL, C.TASA_IVA,
             		   P.PLAZO, NVL(P.FECHA_REAL, P.FECHA_ENTREGA) FECHA_REAL, P.ID_PERIODICIDAD_PRODUCTO, P.FECHA_ENTREGA, PP.DIAS
               INTO vlIdCliente, vlIdGrupo, vlFInicioEntrega, vlCveMetodo, vlIdSucursal, vlTasaIVA, 
@@ -1396,7 +1389,7 @@ PACKAGE BODY PKG_CREDITO AS
                AND P.CVE_GPO_EMPRESA	         = S.CVE_GPO_EMPRESA
                AND P.CVE_EMPRESA    	         = S.CVE_EMPRESA
         		   AND P.ID_PRODUCTO		           = S.ID_PRODUCTO
-        		   AND P.ID_SUCURSAL               = S.ID_SUCURSAL        -- verificar la relación de estas tablas
+        		   AND P.ID_SUCURSAL               = S.ID_SUCURSAL        -- verificar la relaci?n de estas tablas
         		   AND S.CVE_GPO_EMPRESA	         = C.CVE_GPO_EMPRESA
                AND S.CVE_EMPRESA    	         = C.CVE_EMPRESA
                AND S.ID_SUCURSAL 		           = C.ID_SUCURSAL
@@ -1406,13 +1399,13 @@ PACKAGE BODY PKG_CREDITO AS
         		
             EXCEPTION
                 WHEN NO_DATA_FOUND THEN
-                    pTxRespuesta := 'No se encontró el préstamo en su relación con producto_sucursal con las siguientes caraterísticas: '||CHR(10)||
+                    pTxRespuesta := 'No se encontr? el pr?stamo en su relaci?n con producto_sucursal con las siguientes carater?sticas: '||CHR(10)||
                         ' Grupo Empresa: '||pCveGpoEmpresa||CHR(10)||
                         ' Empresa:       '||pCveEmpresa||CHR(10)||
-                        ' Préstamo:      '||pIdPrestamo;
+                        ' Pr?stamo:      '||pIdPrestamo;
                     RETURN;
                 WHEN TOO_MANY_ROWS THEN
-                    pTxRespuesta := 'Al solicitar los datos genéricos del préstamo se obtienen demasiados registros';
+                    pTxRespuesta := 'Al solicitar los datos gen?ricos del pr?stamo se obtienen demasiados registros';
                     RETURN;
         END;
 
@@ -1425,17 +1418,17 @@ PACKAGE BODY PKG_CREDITO AS
         V.TASA_INTERES  := DameTasaAmort(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, vlTasaIVA, pTxRespuesta);
 
         IF pTxRespuesta IS NOT NULL THEN
-            pTxRespuesta := 'Error al calcular la tasa de interés del préstamo, verifique : '||pTxRespuesta;
+            pTxRespuesta := 'Error al calcular la tasa de inter?s del pr?stamo, verifique : '||pTxRespuesta;
             RETURN;
         END IF;
 
-        -- se borra la tabla de accesorios de amortización
+        -- se borra la tabla de accesorios de amortizaci?n
         DELETE SIM_TABLA_AMORT_ACCESORIO
          WHERE CVE_GPO_EMPRESA 	= pCveGpoEmpresa
            AND CVE_EMPRESA     	= pCveEmpresa
            AND ID_PRESTAMO     	= pIdPrestamo;
 
-        -- se borra la tabla de amortización
+        -- se borra la tabla de amortizaci?n
         DELETE SIM_TABLA_AMORTIZACION
          WHERE CVE_GPO_EMPRESA 	= pCveGpoEmpresa
            AND CVE_EMPRESA     	= pCveEmpresa
@@ -1466,7 +1459,7 @@ PACKAGE BODY PKG_CREDITO AS
                                                   DameCargoInicial(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, pTxRespuesta), 10);
 
                     IF pTxRespuesta IS NOT NULL THEN
-                        pTxRespuesta := 'Error al calcular el saldo inicial del préstamo: '||pTxRespuesta;
+                        pTxRespuesta := 'Error al calcular el saldo inicial del pr?stamo: '||pTxRespuesta;
                         ROLLBACK;
                         RETURN;
                     END IF;
@@ -1476,7 +1469,7 @@ PACKAGE BODY PKG_CREDITO AS
                     IF vlIdPeriodicidad IN (7,8) AND vlFEntrega <> vlFReal THEN
 
                         IF vlCveMetodo NOT IN ('05','06') THEN
-                            --  Se calcula el importe de interés extra y el iva del mismo
+                            --  Se calcula el importe de inter?s extra y el iva del mismo
                             V.IMP_INTERES_EXTRA := DameInteresExtra(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, V.IMP_SALDO_INICIAL,
                                                                     vlTasaIVA, pTxRespuesta) / (1 + vlTasaIVA/100);
                                                                     
@@ -1484,19 +1477,19 @@ PACKAGE BODY PKG_CREDITO AS
 
                             -- Verifica que no haya habido error
                             IF pTxRespuesta IS NOT NULL THEN
-                                pTxRespuesta := 'Error al calcular el interés extra: '||pTxRespuesta;
+                                pTxRespuesta := 'Error al calcular el inter?s extra: '||pTxRespuesta;
                                 ROLLBACK;
                                 RETURN;
                             END IF;
 
                         ELSE
-                            -- Si no se trata de los métodos anteriores
+                            -- Si no se trata de los m?todos anteriores
                             V.IMP_SALDO_INICIAL := ROUND(V.IMP_SALDO_INICIAL + 
                                                         (DameInteresExtra(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, V.IMP_SALDO_INICIAL,
                                                                           vlTasaIVA,pTxRespuesta) * vlPlazo), 10);
 
                             IF pTxRespuesta IS NOT NULL THEN
-                                pTxRespuesta := 'Error al calcular el interés extra: '||pTxRespuesta;
+                                pTxRespuesta := 'Error al calcular el inter?s extra: '||pTxRespuesta;
                                 ROLLBACK;
                                 RETURN;
                             END IF;
@@ -1510,7 +1503,7 @@ PACKAGE BODY PKG_CREDITO AS
                         V.IMP_IVA_INTERES_EXTRA := 0;
                     END IF;
 
-                    -- Se guarda el monto para cálculos posteriores
+                    -- Se guarda el monto para c?lculos posteriores
                     vlMontoInicial                 := V.IMP_SALDO_INICIAL;
                     V.IMP_CAPITAL_AMORT            := ROUND(V.IMP_SALDO_INICIAL / vlPlazo, 10);
                     V.IMP_INTERES                  := ROUND(V.IMP_SALDO_INICIAL * V.TASA_INTERES / (1+vlTasaIVA / 100), 10);
@@ -1529,17 +1522,17 @@ PACKAGE BODY PKG_CREDITO AS
 
                 END IF;
 
-                -- Se calcula la fecha de amortización
+                -- Se calcula la fecha de amortizaci?n
                 vlFechaAmort                := vlFechaAmort + vlDiasPeriodicidad;
                 V.FECHA_AMORTIZACION        := DameFechaValida(pCveGpoEmpresa, pCveEmpresa, vlFechaAmort, 'MX', pTxRespuesta);
 
                 IF pTxRespuesta IS NOT NULL THEN
-                    pTxRespuesta := 'Error al calcular la fecha de amortización: '||pTxRespuesta;
+                    pTxRespuesta := 'Error al calcular la fecha de amortizaci?n: '||pTxRespuesta;
                     ROLLBACK;
                     RETURN;
                 END IF;
                             
-                -- Cálculo del monto a pagar
+                -- C?lculo del monto a pagar
                 IF vlCveMetodo IN ('05','06') THEN
                     V.IMP_PAGO              := ROUND((NVL(V.IMP_SALDO_INICIAL, 0) * NVL(V.TASA_INTERES, 0)) /
                                                      (1 - (1 / POWER(1 + NVL(V.TASA_INTERES, 0), (vlPlazo - i + 1) ) ) ), 10);
@@ -1634,12 +1627,12 @@ PACKAGE BODY PKG_CREDITO AS
         -- Actualiza la informacion del credito
         vgResultado := fActualizaInformacionCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, vgFechaSistema, pTxRespuesta);
 
-        pTxrespuesta := 'La tabla de amortización del préstamo '||pIdPrestamo||' se generó correctamente.';
+        pTxrespuesta := 'La tabla de amortizaci?n del pr?stamo '||pIdPrestamo||' se gener? correctamente.';
 
     EXCEPTION
         WHEN OTHERS THEN
             ROLLBACK;
-            pTxrespuesta := 'Error global al calcular la tabla de amortización del préstamo '||pIdPrestamo||' '||SQLERRM;
+            pTxrespuesta := 'Error global al calcular la tabla de amortizaci?n del pr?stamo '||pIdPrestamo||' '||SQLERRM;
             RETURN;
     END pGeneraTablaAmortizacion;
 
@@ -1734,12 +1727,12 @@ PACKAGE BODY PKG_CREDITO AS
                    NUM_PAGO_AMORTIZACION = vlAmortizacion.NUM_PAGO_AMORTIZACION;
         END LOOP;
 
-        pTxrespuesta := 'La tabla para el metodo 06 del préstamo ' || pIdPrestamo || ' se generó correctamente.';
+        pTxrespuesta := 'La tabla para el metodo 06 del pr?stamo ' || pIdPrestamo || ' se gener? correctamente.';
 
         EXCEPTION
            WHEN OTHERS THEN
                 ROLLBACK;
-                pTxrespuesta := 'Error global al calcular la ta tabla para el metodo 06 del préstamo '||pIdPrestamo||' '||SQLERRM;
+                pTxrespuesta := 'Error global al calcular la ta tabla para el metodo 06 del pr?stamo '||pIdPrestamo||' '||SQLERRM;
                 RETURN;
                 
     END pGeneraTablaAmortPrePago;
@@ -2645,7 +2638,7 @@ PACKAGE BODY PKG_CREDITO AS
             
         FOR vlBufDebe IN curDebe LOOP
             IF vlImpSaldo > 0 THEN
-               -- Realiza la validación para identificar si liquida el total del pago
+               -- Realiza la validaci?n para identificar si liquida el total del pago
                -- Si el saldo es mayor al importe del concepto, cubre todo el concepto, de lo contrario solo lo que le alcanza
                IF vlBufDebe.IMP_NETO > vlImpSaldo THEN 
                   -- Si ya no tiene saldo para el pago del concepto no paga completo
@@ -3758,3 +3751,4 @@ BEGIN
    vgFechaSistema := PKG_PROCESOS.DameFechaSistema('SIM', 'CREDICONFIA');
    
 END PKG_CREDITO;
+/
