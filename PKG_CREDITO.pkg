@@ -14,6 +14,7 @@ CREATE OR REPLACE PACKAGE PKG_CREDITO AS
     cCargoAjuste                        CONSTANT PFIN_MOVIMIENTO.CVE_OPERACION%TYPE              := 'CAAJUS';
     cPagoDefuncion                      CONSTANT PFIN_MOVIMIENTO.CVE_OPERACION%TYPE              := 'EXTDEF';
 	cCuentaIncobrable                   CONSTANT PFIN_MOVIMIENTO.CVE_OPERACION%TYPE              := 'CTAINCOB';
+	cCancelaIncobrable                  CONSTANT PFIN_MOVIMIENTO.CVE_OPERACION%TYPE              := 'CANINC';
     cCancelaPago                        CONSTANT PFIN_MOVIMIENTO.CVE_OPERACION%TYPE              := 'CANPAG';
     cDepositoTesoreria                  CONSTANT PFIN_MOVIMIENTO.CVE_OPERACION%TYPE              := 'TEDEPEFE';    
     cImpBruto                           CONSTANT PFIN_MOVIMIENTO_DET.CVE_CONCEPTO%TYPE           := 'IMPBRU';
@@ -214,6 +215,14 @@ CREATE OR REPLACE PACKAGE PKG_CREDITO AS
                                      pCveOperacion    IN PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE,
                                      pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
                                      pTxRespuesta     OUT VARCHAR2)
+    RETURN NUMBER;
+	
+	-- Funcion utilizada para cancelar un movimiento de cuentra incobrable aplicado al credito
+    FUNCTION fCancelaIncobrable(pCveGpoEmpresa    IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
+                          pCveEmpresa             IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
+                          pIdMovimientoIncobrable IN PFIN_PRE_MOVIMIENTO.ID_MOVIMIENTO%TYPE,
+                          pCveUsuario             IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
+                          pTxRespuesta            OUT VARCHAR2)
     RETURN NUMBER;
     
 End Pkg_Credito;
@@ -3741,6 +3750,152 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
        
        RETURN 0;
     END fCancelaPago;
+	
+	-- Funcion utilizada para cancelar un movimiento de cuentra incobrable aplicado al credito
+    FUNCTION fCancelaIncobrable(pCveGpoEmpresa    IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
+                          pCveEmpresa             IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
+                          pIdMovimientoIncobrable IN PFIN_PRE_MOVIMIENTO.ID_MOVIMIENTO%TYPE,
+                          pCveUsuario             IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
+                          pTxRespuesta            OUT VARCHAR2)
+    RETURN NUMBER
+    IS
+       vlBufMovimiento        PFIN_MOVIMIENTO%ROWTYPE;
+       vlIdPreMovto           NUMBER;
+       vlIdMovimiento         NUMBER;
+        
+       CURSOR curPrestamos IS
+          SELECT DISTINCT ID_PRESTAMO, F_APLICACION
+            FROM PFIN_MOVIMIENTO
+           WHERE CVE_GPO_EMPRESA               = pCveGpoEmpresa           AND
+                 CVE_EMPRESA                   = pCveEmpresa              AND
+                 ID_GRUPO                      = vlBufMovimiento.ID_GRUPO AND
+                 NVL(ID_TRANSACCION_CANCELA,0) = 0                        AND
+                 SIT_MOVIMIENTO               <> cSitCancelada            AND
+                 CVE_OPERACION                 = cCuentaIncobrable;
+       
+       CURSOR curPagosPrestamo IS
+          SELECT *
+            FROM PFIN_MOVIMIENTO
+           WHERE CVE_GPO_EMPRESA               = pCveGpoEmpresa           AND
+                 CVE_EMPRESA                   = pCveEmpresa              AND
+                 ID_GRUPO                      = vlBufMovimiento.ID_GRUPO AND
+                 NVL(ID_TRANSACCION_CANCELA,0) = 0                        AND
+                 SIT_MOVIMIENTO               <> cSitCancelada            AND
+                 CVE_OPERACION                 = cCuentaIncobrable;
+                 
+       CURSOR curConceptos (pIdMovimiento IN PFIN_MOVIMIENTO.ID_MOVIMIENTO%TYPE) IS
+          SELECT CVE_CONCEPTO, IMP_CONCEPTO
+            FROM PFIN_MOVIMIENTO_DET
+           WHERE CVE_GPO_EMPRESA = pCveGpoEmpresa           AND
+                 CVE_EMPRESA     = pCveEmpresa              AND
+                 ID_MOVIMIENTO   = pIdMovimiento;
+                 
+       CURSOR curDepositos IS
+          SELECT *
+            FROM PFIN_MOVIMIENTO
+           WHERE CVE_GPO_EMPRESA               = pCveGpoEmpresa           AND
+                 CVE_EMPRESA                   = pCveEmpresa              AND
+                 ID_GRUPO                      = vlBufMovimiento.ID_GRUPO AND
+                 NVL(ID_TRANSACCION_CANCELA,0) = 0                        AND
+                 SIT_MOVIMIENTO               <> cSitCancelada            AND
+                 CVE_OPERACION                 = cCuentaIncobrable; 
+    BEGIN
+       -- Valida que exista la transaccion original
+       --        Debe existir
+       --        Debe ser una cuenta incobrable
+       --        No debe estar cancelada
+       --        Debe excluir a las transacciones canceladas por un ajuste
+       BEGIN
+          SELECT *
+            INTO vlBufMovimiento
+            FROM PFIN_MOVIMIENTO
+           WHERE CVE_GPO_EMPRESA               = pCveGpoEmpresa    AND
+                 CVE_EMPRESA                   = pCveEmpresa       AND
+                 ID_MOVIMIENTO                 = pIdMovimientoIncobrable AND
+                 NVL(ID_TRANSACCION_CANCELA,0) = 0                 AND
+                 NVL(ID_GRUPO,0)               <> 0                AND
+                 CVE_OPERACION                 = cCuentaIncobrable;
+           
+          EXCEPTION 
+             WHEN NO_DATA_FOUND THEN
+                  pTxRespuesta := 'No existe el movimiento incobrable o no es un movimiento que pueda cancelarse o el grupo del movimiento es cero';
+                  RETURN -1;
+       END;     
+
+       -- Recupera el grupo
+       SELECT SQ02_PFIN_PRE_MOVIMIENTO.NEXTVAL INTO vgFolioGrupo FROM DUAL;
+       
+       -- Genera los movimientos de ajuste por cancelacion
+       FOR vlBufAjuste IN curDepositos LOOP
+           -- Se obtiene el id del premovimiento
+           SELECT SQ01_PFIN_PRE_MOVIMIENTO.NEXTVAL INTO vlIdPreMovto FROM DUAL;
+
+           -- Se genera el premovimiento del ajuste
+           PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, 
+                                        vlBufAjuste.ID_CUENTA, vlBufAjuste.ID_PRESTAMO, cDivisaPeso, cCargoAjuste, 
+                                        vlBufAjuste.IMP_NETO, 'AJUSTE', 'AJUSTE', 'Cargo Ajuste Extraordinario',
+                                        vgFolioGrupo, pCveUsuario, vlBufAjuste.F_APLICACION, 0, pTxrespuesta);            
+
+           IF pTxrespuesta IS NOT NULL THEN 
+              DBMS_OUTPUT.PUT_LINE('Respuesta Premovto Ajuste:' || pTxrespuesta);
+              RETURN -1; 
+           END IF;
+            
+           PKG_PROCESOS.pGeneraPreMovtoDet(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, cImpBruto, vlBufAjuste.IMP_NETO, 
+                                           'Abono Ajuste Extraordinario', pTxrespuesta);
+
+           -- Se procesa el premovimiento
+           vlIdMovimiento := PKG_PROCESADOR_FINANCIERO.pprocesamovimiento(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, 'PV', NULL, cFalso, pTxRespuesta);
+       END LOOP;
+       
+       -- Recupera el grupo de las transacciones para generar la cancelacion de cada uno de los pagos del prestamo
+       FOR vlBufPagos IN curPagosPrestamo LOOP
+          -- Genera la cancelacion del credito con la informacion de la transaccion
+          
+          -- Se obtiene el id del premovimiento
+          SELECT SQ01_PFIN_PRE_MOVIMIENTO.NEXTVAL INTO vlIdPreMovto FROM DUAL;
+
+          -- Se genera el premovimiento del movimiento extraordinario
+          PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, 
+                                       vlBufPagos.ID_CUENTA, vlBufPagos.ID_PRESTAMO, cDivisaPeso, cCancelaIncobrable, 
+                                       vlBufPagos.IMP_NETO, 'AJUSTE', 'AJUSTE', 'Ajuste Extraordinario', vgFolioGrupo,
+                                       pCveUsuario, vlBufPagos.F_APLICACION, vlBufPagos.NUM_PAGO_AMORTIZACION, pTxrespuesta);            
+
+          IF pTxrespuesta IS NOT NULL THEN 
+             DBMS_OUTPUT.PUT_LINE('Respuesta Premovto:' || pTxrespuesta);
+             RETURN -1; 
+          END IF;
+            
+          -- Crea el detalle con los mismo conceptos que el pago del credito
+          FOR vlBufConceptos IN curConceptos(vlBufPagos.ID_MOVIMIENTO) LOOP
+              PKG_PROCESOS.pGeneraPreMovtoDet(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vlBufConceptos.CVE_CONCEPTO,
+                                              vlBufConceptos.IMP_CONCEPTO, 'Ajuste Extraordinario', pTxrespuesta);
+          END LOOP;
+              
+          -- Se procesa el premovimiento
+          vlIdMovimiento := PKG_PROCESADOR_FINANCIERO.pprocesamovimiento(pcvegpoempresa, pcveempresa, vlIdPreMovto, 'PV', NULL, cFalso, ptxrespuesta);
+          
+          -- Actualiza la informacion de la tabla de amortizacion y de los accesorios con el movimiento generado
+          pActualizaTablaAmortizacion(pCveGpoEmpresa, pCveEmpresa, vlIdMovimiento, pTxRespuesta);
+          
+          -- Actualiza la transaccion original
+          UPDATE PFIN_MOVIMIENTO
+             SET ID_TRANSACCION_CANCELA = vlIdMovimiento
+           WHERE CVE_GPO_EMPRESA = pCveGpoEmpresa    AND
+                 CVE_EMPRESA     = pCveEmpresa       AND
+                 ID_MOVIMIENTO   = vlBufPagos.ID_MOVIMIENTO;
+       END LOOP;
+
+       -- Actualiza la informacion de los creditos involucrados
+       FOR vlBufPrestamos IN curPrestamos LOOP
+           vgResultado := fActualizaInformacionCredito(pCveGpoEmpresa, pCveEmpresa, vlBufPrestamos.ID_PRESTAMO, vlBufPrestamos.F_APLICACION, pTxRespuesta);
+       END LOOP;
+                        
+       pTxRespuesta := 'Movimiento aplicado con exito';
+       
+       RETURN 0;
+    END fCancelaIncobrable;
+
     
 /*
 Incidencia 36: No esta asignando el recargo a un integrante cuando el grupo tiene deuda
