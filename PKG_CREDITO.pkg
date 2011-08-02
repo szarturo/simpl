@@ -3624,7 +3624,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                  CVE_EMPRESA     = pCveEmpresa              AND
                  ID_MOVIMIENTO   = pIdMovimiento;
                  
-       CURSOR curDepositos IS
+         CURSOR curDepositos IS
           SELECT *
             FROM PFIN_MOVIMIENTO
            WHERE CVE_GPO_EMPRESA               = pCveGpoEmpresa           AND
@@ -3632,7 +3632,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                  ID_GRUPO                      = vlBufMovimiento.ID_GRUPO AND
                  NVL(ID_TRANSACCION_CANCELA,0) = 0                        AND
                  SIT_MOVIMIENTO               <> cSitCancelada            AND
-                 CVE_OPERACION                 = cDepositoTesoreria;                 
+                 CVE_OPERACION                 = cPagoPrestamo;               
     BEGIN
        -- Valida que exista la transaccion original
        --        Debe existir
