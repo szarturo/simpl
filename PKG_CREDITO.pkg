@@ -1605,13 +1605,13 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                                                       IMP_IVA_ACCESORIO_PAGADO, IMP_EXT_ACCESORIO, IMP_EXT_IVA_ACCESORIO)
                 SELECT CVE_GPO_EMPRESA, CVE_EMPRESA, ID_PRESTAMO, NUM_PAGO_AMORTIZACION, vlBufAccesorios.ID_CARGO_COMISION, 
                        vlBufAccesorios.ID_FORMA_APLICACION,
-                       ROUND(
-                            DECODE(vlBufAccesorios.ID_FORMA_APLICACION,3, vlMontoInicial,5,1,4,IMP_SALDO_INICIAL) *
-                            vlBufAccesorios.VALOR_CARGO /
-                            DECODE(vlBufAccesorios.ID_FORMA_APLICACION,3,vlBufAccesorios.VALOR_UNIDAD,5,1,4,
-                            vlBufAccesorios.VALOR_UNIDAD) /
-                            vlBufAccesorios.DIAS_CARGO * vlBufAccesorios.DIAS_PRODUCTO
-                       ,10) AS IMP_ACCESORIO, 
+                       (CASE
+						  WHEN vlBufAccesorios.ID_FORMA_APLICACION = 0
+						  THEN 0
+						  ELSE ROUND(DECODE(vlBufAccesorios.ID_FORMA_APLICACION,3, vlMontoInicial,5,1,4,IMP_SALDO_INICIAL) * vlBufAccesorios.VALOR_CARGO /
+									 DECODE(vlBufAccesorios.ID_FORMA_APLICACION,3,vlBufAccesorios.VALOR_UNIDAD,5,1,4,vlBufAccesorios.VALOR_UNIDAD) /
+									 vlBufAccesorios.DIAS_CARGO * vlBufAccesorios.DIAS_PRODUCTO,10)
+					   END) AS IMP_ACCESORIO, 
                        ROUND(
                             DECODE(vlBufAccesorios.ID_FORMA_APLICACION,3, vlMontoInicial,5,1,4,IMP_SALDO_INICIAL) *
                             vlBufAccesorios.VALOR_CARGO /
