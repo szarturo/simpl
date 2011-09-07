@@ -60,7 +60,8 @@ CREATE OR REPLACE PACKAGE PKG_PROCESOS AS
                                 pIdGrupo        IN PFIN_PRE_MOVIMIENTO.ID_GRUPO%TYPE,
                                 pCveUsuario     IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
                                 pFValor         IN PFIN_PRE_MOVIMIENTO.F_LIQUIDACION%TYPE,
-                                pNumPagoAmort   IN PFIN_PRE_MOVIMIENTO.NUM_PAGO_AMORTIZACION%TYPE,                                
+                                pNumPagoAmort   IN PFIN_PRE_MOVIMIENTO.NUM_PAGO_AMORTIZACION%TYPE,   
+                                pIdReferencia   IN PFIN_PRE_MOVIMIENTO.ID_REFERENCIA%TYPE,
                                 pTxrespuesta    OUT VARCHAR2);
     --********************************************************************************************************--
     --*     pGeneraPreMovtoCreditoDet                                                                        *--
@@ -408,6 +409,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_PROCESOS AS
                                 pCveUsuario     IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
                                 pFValor         IN PFIN_PRE_MOVIMIENTO.F_LIQUIDACION%TYPE,
                                 pNumPagoAmort   IN PFIN_PRE_MOVIMIENTO.NUM_PAGO_AMORTIZACION%TYPE,
+                                pIdReferencia   IN PFIN_PRE_MOVIMIENTO.ID_REFERENCIA%TYPE,
                                 pTxrespuesta    OUT VARCHAR2)
     IS
         V               PFIN_PRE_MOVIMIENTO%ROWTYPE;
@@ -462,6 +464,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_PROCESOS AS
         V.SIT_PRE_MOVIMIENTO     := 'NP';
         V.F_APLICACION           := pFValor;
         V.NUM_PAGO_AMORTIZACION  := pNumPagoAmort;
+        V.ID_REFERENCIA          := pIdReferencia;
         
         INSERT INTO PFIN_PRE_MOVIMIENTO VALUES V;
         

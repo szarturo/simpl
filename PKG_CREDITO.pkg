@@ -67,6 +67,7 @@ CREATE OR REPLACE PACKAGE PKG_CREDITO AS
                                          pFValor          IN PFIN_PRE_MOVIMIENTO.F_APLICACION%TYPE,
                                          pCveOperacion    IN PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE,
                                          pIdGrupo         IN PFIN_PRE_MOVIMIENTO.ID_GRUPO%TYPE,
+                                         pIdReferencia    IN PFIN_PRE_MOVIMIENTO.ID_REFERENCIA%TYPE,
                                          pTxrespuesta     OUT VARCHAR2)
     RETURN NUMBER;
 
@@ -82,6 +83,7 @@ CREATE OR REPLACE PACKAGE PKG_CREDITO AS
                                  pIdGrupo         IN PFIN_PRE_MOVIMIENTO.ID_GRUPO%TYPE,
                                  pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
                                  pFValor          IN PFIN_PRE_MOVIMIENTO.F_APLICACION%TYPE,
+                                 pIdReferencia    IN PFIN_PRE_MOVIMIENTO.ID_REFERENCIA%TYPE,
                                  pTxrespuesta     OUT VARCHAR2);
 
     --********************************************************************************************************--
@@ -95,6 +97,7 @@ CREATE OR REPLACE PACKAGE PKG_CREDITO AS
                                  pIdGrupo         IN PFIN_PRE_MOVIMIENTO.ID_GRUPO%TYPE,
                                  pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
                                  pFValor          IN PFIN_PRE_MOVIMIENTO.F_APLICACION%TYPE,
+                                 pIdReferencia    IN PFIN_PRE_MOVIMIENTO.ID_REFERENCIA%TYPE,
                                  pCveOperacion    IN PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE,
                                  pTxrespuesta     OUT VARCHAR2);
 
@@ -180,6 +183,7 @@ CREATE OR REPLACE PACKAGE PKG_CREDITO AS
                           pCveEmpresa       IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
                           pIdMovimientoPago IN PFIN_PRE_MOVIMIENTO.ID_MOVIMIENTO%TYPE,
                           pCveUsuario       IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
+                          pIdReferencia     IN PFIN_PRE_MOVIMIENTO.ID_REFERENCIA%TYPE,
                           pTxRespuesta      OUT VARCHAR2)
     RETURN NUMBER;
 
@@ -1753,11 +1757,12 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                                  pIdGrupo         IN PFIN_PRE_MOVIMIENTO.ID_GRUPO%TYPE,
                                  pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
                                  pFValor          IN PFIN_PRE_MOVIMIENTO.F_APLICACION%TYPE,
+                                 pIdReferencia    IN PFIN_PRE_MOVIMIENTO.ID_REFERENCIA%TYPE,
                                  pTxrespuesta     OUT VARCHAR2)
     IS
        vlCveOperacion   PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE := cPagoPrestamo;
     BEGIN
-       pAplicaPagoCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, pIdGrupo, pCveUsuario, pFValor, vlCveOperacion, pTxrespuesta);
+       pAplicaPagoCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, pIdGrupo, pCveUsuario, pFValor, pIdReferencia, vlCveOperacion, pTxrespuesta);
     END pAplicaPagoCredito;
 
     PROCEDURE pAplicaPagoCredito(pCveGpoEmpresa   IN PFIN_PRE_MOVIMIENTO.CVE_GPO_EMPRESA%TYPE,
@@ -1766,6 +1771,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                                  pIdGrupo         IN PFIN_PRE_MOVIMIENTO.ID_GRUPO%TYPE,
                                  pCveUsuario      IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
                                  pFValor          IN PFIN_PRE_MOVIMIENTO.F_APLICACION%TYPE,
+                                 pIdReferencia    IN PFIN_PRE_MOVIMIENTO.ID_REFERENCIA%TYPE,
                                  pCveOperacion    IN PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE,
                                  pTxrespuesta     OUT VARCHAR2)
     IS
@@ -1879,7 +1885,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
            
            IF vlImpSaldo > 0 THEN
              vgResultado := pAplicaPagoCreditoPorAmort(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, vlBufAmortizaciones.NUM_PAGO_AMORTIZACION, 
-                                                       vlImpSaldo, vlIdCuenta, pCveUsuario, pFValor, pCveOperacion, vgFolioGrupo, pTxrespuesta);
+                                                       vlImpSaldo, vlIdCuenta, pCveUsuario, pFValor, pCveOperacion, vgFolioGrupo, pIdReferencia, pTxrespuesta);
 
              DBMS_OUTPUT.PUT_LINE('Aplico pago a la amortizacion: ' || vlBufAmortizaciones.NUM_PAGO_AMORTIZACION);             
            ELSE
@@ -2573,6 +2579,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                                         pFValor          IN PFIN_PRE_MOVIMIENTO.F_APLICACION%TYPE,
                                         pCveOperacion    IN PFIN_PRE_MOVIMIENTO.CVE_OPERACION%TYPE,
                                         pIdGrupo         IN PFIN_PRE_MOVIMIENTO.ID_GRUPO%TYPE,
+                                        pIdReferencia    IN PFIN_PRE_MOVIMIENTO.ID_REFERENCIA%TYPE,
                                         pTxrespuesta     OUT VARCHAR2)
     RETURN NUMBER
     IS
@@ -2639,7 +2646,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
         -- Se genera el premovimiento
         PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, pIdCuenta, pIdPrestamo,
                                      cDivisaPeso, pCveOperacion, vlImpNeto, 'PRESTAMO', 'PRESTAMO', 'Pago de prestamo',
-                                     pIdGrupo, pCveUsuario, pFValor, pNumAmortizacion, pTxrespuesta);            
+                                     pIdGrupo, pCveUsuario, pFValor, pNumAmortizacion, pIdReferencia, pTxrespuesta);            
 
         IF pTxrespuesta IS NOT NULL THEN 
            RETURN 1; 
@@ -2964,6 +2971,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
        vlIdCuenta       SIM_PRESTAMO.ID_CUENTA_REFERENCIA%TYPE;
        vlIdPreMovto     PFIN_PRE_MOVIMIENTO.ID_PRE_MOVIMIENTO%TYPE;
        vlIdMovimiento   PFIN_PRE_MOVIMIENTO.ID_MOVIMIENTO%TYPE;
+       vlIdReferencia   PFIN_PRE_MOVIMIENTO.ID_REFERENCIA%TYPE;
     BEGIN
        -- Valida que sea un credito individual ya que solo puede morirse un individuo
        IF fExistePresamoIndividual(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo) <> cVerdadero OR
@@ -3006,7 +3014,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
        -- Se genera el premovimiento
        PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, vlIdCuenta, pIdPrestamo,
                                     cDivisaPeso, cAbonoAjuste, vlImpDeuda, 'AJUSTE', 'AJUSTE', 'Ajuste por defuncion',
-                                    vgFolioGrupo, pCveUsuario, pFValor, 0, pTxrespuesta);            
+                                    vgFolioGrupo, pCveUsuario, pFValor, 0, vlIdReferencia, pTxrespuesta);            
 
        IF pTxrespuesta IS NOT NULL THEN 
           RETURN 1; 
@@ -3020,7 +3028,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
        DBMS_OUTPUT.PUT_LINE('ACTUALIZO PREMOVTO:' || vlIdPreMovto);
 
        -- Ejecuta el pago del credito utilizando la clave de operacion de defuncion
-       pAplicaPagoCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, vgFolioGrupo, pCveUsuario, pFValor, vlCveOperacion, pTxrespuesta);
+       pAplicaPagoCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, vgFolioGrupo, pCveUsuario, pFValor, vlIdReferencia, vlCveOperacion, pTxrespuesta);
 
        IF pTxrespuesta IS NOT NULL THEN 
           ROLLBACK;
@@ -3056,6 +3064,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
        vlIdCuenta       SIM_PRESTAMO.ID_CUENTA_REFERENCIA%TYPE;
        vlIdPreMovto     PFIN_PRE_MOVIMIENTO.ID_PRE_MOVIMIENTO%TYPE;
        vlIdMovimiento   PFIN_PRE_MOVIMIENTO.ID_MOVIMIENTO%TYPE;
+       vlIdReferencia   PFIN_PRE_MOVIMIENTO.ID_REFERENCIA%TYPE;
     BEGIN
        -- Valida que sea un credito individual ya que solo puede morirse un individuo
        IF fExistePresamoIndividual(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo) <> cVerdadero OR
@@ -3098,7 +3107,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
        -- Se genera el premovimiento
        PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, vlIdCuenta, pIdPrestamo,
                                     cDivisaPeso, cAbonoAjuste, vlImpDeuda, 'AJUSTE', 'AJUSTE', 'Ajuste por cuenta incobrable',
-                                    vgFolioGrupo, pCveUsuario, pFValor, 0, pTxrespuesta);            
+                                    vgFolioGrupo, pCveUsuario, pFValor, 0, vlIdReferencia, pTxrespuesta);            
 
        IF pTxrespuesta IS NOT NULL THEN 
           RETURN 1; 
@@ -3188,6 +3197,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
        vlIdPreMovto   PFIN_PRE_MOVIMIENTO.ID_PRE_MOVIMIENTO%TYPE;
        vlIdMovimiento PFIN_PRE_MOVIMIENTO.ID_MOVIMIENTO%TYPE;
        vlFValor       PFIN_PRE_MOVIMIENTO.F_APLICACION%TYPE := vgFechaSistema;
+       vlIdReferencia   PFIN_PRE_MOVIMIENTO.ID_REFERENCIA%TYPE;
 
        CURSOR curConceptos IS
           SELECT ID_PRESTAMO, CVE_CONCEPTO, IMP_CONCEPTO
@@ -3305,7 +3315,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
            PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, vlIdCuenta, 
                                         vlBufMovtoAjuste.ID_PRESTAMO, cDivisaPeso, cAbonoAjuste, 
                                         vlBufMovtoAjuste.IMP_AJUSTE, 'AJUSTE', 'AJUSTE', 'Abono Ajuste Extraordinario',
-                                        vgFolioGrupo, pCveUsuario, vlFValor, 0, pTxrespuesta);
+                                        vgFolioGrupo, pCveUsuario, vlFValor, 0, vlIdReferencia, pTxrespuesta);
 
            IF pTxrespuesta IS NOT NULL THEN 
               DBMS_OUTPUT.PUT_LINE('Respuesta Premovto Ajuste:' || pTxrespuesta);
@@ -3332,7 +3342,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, vlIdCuenta, 
                                             vlBufMovtoAjuste.ID_PRESTAMO, cDivisaPeso, pCveOperacion, 
                                             vlBufAjusteXAmort.IMP_AJUSTE, 'AJUSTE', 'AJUSTE', 'Ajuste Extraordinario',
-                                            vgFolioGrupo, pCveUsuario, vlFValor, vlBufAjusteXAmort.NUM_PAGO_AMORTIZACION, pTxrespuesta);            
+                                            vgFolioGrupo, pCveUsuario, vlFValor, vlBufAjusteXAmort.NUM_PAGO_AMORTIZACION, vlIdReferencia, pTxrespuesta);            
 
               IF pTxrespuesta IS NOT NULL THEN 
                  DBMS_OUTPUT.PUT_LINE('Respuesta Premovto:' || pTxrespuesta);
@@ -3382,6 +3392,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
        vlIdPreMovto   PFIN_PRE_MOVIMIENTO.ID_PRE_MOVIMIENTO%TYPE;
        vlIdMovimiento PFIN_PRE_MOVIMIENTO.ID_MOVIMIENTO%TYPE;
        vlFValor       PFIN_PRE_MOVIMIENTO.F_APLICACION%TYPE := vgFechaSistema;
+       vlIdReferencia   PFIN_PRE_MOVIMIENTO.ID_REFERENCIA%TYPE;
 
        CURSOR curConceptos IS
           SELECT ID_PRESTAMO, CVE_CONCEPTO, IMP_CONCEPTO
@@ -3494,7 +3505,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
            PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, vlIdCuenta, 
                                         vlBufMovtoAjuste.ID_PRESTAMO, cDivisaPeso, cCargoAjuste, 
                                         vlBufMovtoAjuste.IMP_AJUSTE, 'AJUSTE', 'AJUSTE', 'Cargo Ajuste Extraordinario',
-                                        vgFolioGrupo, pCveUsuario, vlFValor, 0, pTxrespuesta);            
+                                        vgFolioGrupo, pCveUsuario, vlFValor, 0, vlIdReferencia, pTxrespuesta);            
 
            IF pTxrespuesta IS NOT NULL THEN 
               DBMS_OUTPUT.PUT_LINE('Respuesta Premovto Ajuste:' || pTxrespuesta);
@@ -3521,7 +3532,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, vlIdCuenta, 
                                             vlBufMovtoAjuste.ID_PRESTAMO, cDivisaPeso, pCveOperacion, 
                                             vlBufAjusteXAmort.IMP_AJUSTE, 'AJUSTE', 'AJUSTE', 'Ajuste Extraordinario',
-                                            vgFolioGrupo, pCveUsuario, vlFValor, vlBufAjusteXAmort.NUM_PAGO_AMORTIZACION, pTxrespuesta);            
+                                            vgFolioGrupo, pCveUsuario, vlFValor, vlBufAjusteXAmort.NUM_PAGO_AMORTIZACION, vlIdReferencia, pTxrespuesta);            
 
               IF pTxrespuesta IS NOT NULL THEN 
                  DBMS_OUTPUT.PUT_LINE('Respuesta Premovto:' || pTxrespuesta);
@@ -3589,6 +3600,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
                           pCveEmpresa       IN PFIN_PRE_MOVIMIENTO.CVE_EMPRESA%TYPE,
                           pIdMovimientoPago IN PFIN_PRE_MOVIMIENTO.ID_MOVIMIENTO%TYPE,
                           pCveUsuario       IN PFIN_PRE_MOVIMIENTO.CVE_USUARIO%TYPE,
+                          pIdReferencia     IN PFIN_PRE_MOVIMIENTO.ID_REFERENCIA%TYPE,
                           pTxRespuesta      OUT VARCHAR2)
     RETURN NUMBER
     IS
@@ -3596,7 +3608,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
        vlMovtosPosteriores    NUMBER;
        vlIdPreMovto           NUMBER;
        vlIdMovimiento         NUMBER;
-        
+       
        CURSOR curPrestamos IS
           SELECT DISTINCT ID_PRESTAMO, F_APLICACION
             FROM PFIN_MOVIMIENTO
@@ -3689,7 +3701,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
            PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, 
                                         vlBufAjuste.ID_CUENTA, vlBufAjuste.ID_PRESTAMO, cDivisaPeso, cCargoAjuste, 
                                         vlBufAjuste.IMP_NETO, 'AJUSTE', 'AJUSTE', 'Cargo Ajuste Extraordinario',
-                                        vgFolioGrupo, pCveUsuario, vlBufAjuste.F_APLICACION, 0, pTxrespuesta);            
+                                        vgFolioGrupo, pCveUsuario, vlBufAjuste.F_APLICACION, 0, pIdReferencia, pTxrespuesta);            
 
            IF pTxrespuesta IS NOT NULL THEN 
               DBMS_OUTPUT.PUT_LINE('Respuesta Premovto Ajuste:' || pTxrespuesta);
@@ -3714,7 +3726,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
           PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, 
                                        vlBufPagos.ID_CUENTA, vlBufPagos.ID_PRESTAMO, cDivisaPeso, cCancelaPago, 
                                        vlBufPagos.IMP_NETO, 'AJUSTE', 'AJUSTE', 'Ajuste Extraordinario', vgFolioGrupo,
-                                       pCveUsuario, vlBufPagos.F_APLICACION, vlBufPagos.NUM_PAGO_AMORTIZACION, pTxrespuesta);            
+                                       pCveUsuario, vlBufPagos.F_APLICACION, vlBufPagos.NUM_PAGO_AMORTIZACION, pIdReferencia, pTxrespuesta);            
 
           IF pTxrespuesta IS NOT NULL THEN 
              DBMS_OUTPUT.PUT_LINE('Respuesta Premovto:' || pTxrespuesta);
@@ -3762,6 +3774,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
        vlBufMovimiento        PFIN_MOVIMIENTO%ROWTYPE;
        vlIdPreMovto           NUMBER;
        vlIdMovimiento         NUMBER;
+       vlIdReferencia         NUMBER;
         
        CURSOR curPrestamos IS
           SELECT DISTINCT ID_PRESTAMO, F_APLICACION
@@ -3834,7 +3847,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
            PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, 
                                         vlBufAjuste.ID_CUENTA, vlBufAjuste.ID_PRESTAMO, cDivisaPeso, cCargoAjuste, 
                                         vlBufAjuste.IMP_NETO, 'AJUSTE', 'AJUSTE', 'Cargo Ajuste Extraordinario',
-                                        vgFolioGrupo, pCveUsuario, vlBufAjuste.F_APLICACION, 0, pTxrespuesta);            
+                                        vgFolioGrupo, pCveUsuario, vlBufAjuste.F_APLICACION, 0, vlIdReferencia, pTxrespuesta);            
 
            IF pTxrespuesta IS NOT NULL THEN 
               DBMS_OUTPUT.PUT_LINE('Respuesta Premovto Ajuste:' || pTxrespuesta);
@@ -3859,7 +3872,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
           PKG_PROCESOS.pGeneraPreMovto(pCveGpoEmpresa, pCveEmpresa, vlIdPreMovto, vgFechaSistema, 
                                        vlBufPagos.ID_CUENTA, vlBufPagos.ID_PRESTAMO, cDivisaPeso, cCancelaIncobrable, 
                                        vlBufPagos.IMP_NETO, 'AJUSTE', 'AJUSTE', 'Ajuste Extraordinario', vgFolioGrupo,
-                                       pCveUsuario, vlBufPagos.F_APLICACION, vlBufPagos.NUM_PAGO_AMORTIZACION, pTxrespuesta);            
+                                       pCveUsuario, vlBufPagos.F_APLICACION, vlBufPagos.NUM_PAGO_AMORTIZACION, vlIdReferencia, pTxrespuesta);            
 
           IF pTxrespuesta IS NOT NULL THEN 
              DBMS_OUTPUT.PUT_LINE('Respuesta Premovto:' || pTxrespuesta);
