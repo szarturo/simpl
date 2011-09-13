@@ -3132,7 +3132,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_CREDITO AS
        DBMS_OUTPUT.PUT_LINE('ACTUALIZO PREMOVTO:' || vlIdPreMovto);
 
        -- Ejecuta el pago del credito utilizando la clave de operacion de cuenta incobrable
-       pAplicaPagoCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, vgFolioGrupo, pCveUsuario, pFValor, vlCveOperacion, pTxrespuesta);
+       pAplicaPagoCredito(pCveGpoEmpresa, pCveEmpresa, pIdPrestamo, vgFolioGrupo, pCveUsuario, pFValor, 0, vlCveOperacion, pTxrespuesta);
 
        IF pTxrespuesta IS NOT NULL THEN 
           ROLLBACK;
